@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:orientation="vertical"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Done - By Time"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="8dp"/>
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/chartDoneTime"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pending - By Time"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="16dp"/>
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/chartPendingTime"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Done - By Category"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="16dp"/>
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/chartDoneCategory"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pending - By Category"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="16dp"/>
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/chartPendingCategory"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="8dp"/>
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="חזרה"
+            android:layout_marginTop="24dp"/>
+
+    </LinearLayout>
+</ScrollView>

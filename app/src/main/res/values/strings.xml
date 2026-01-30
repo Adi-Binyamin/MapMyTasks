@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">MapMyTasks</string>
+    <string-array name="sort_options">
+        <item>By Day</item>
+        <item>By Category</item>
+    </string-array>
+
+</resources>

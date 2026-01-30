@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <Spinner
+            android:id="@+id/categorySpinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:spinnerMode="dropdown"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Morning -->
+        <TextView android:text="Morning" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <ProgressBar
+            android:id="@+id/progressMorning"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:max="100"/>
+        <TextView android:id="@+id/tvMorningPercent" android:text="0%" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+        <!-- Afternoon -->
+        <TextView android:text="Afternoon" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <ProgressBar
+            android:id="@+id/progressAfternoon"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:max="100"/>
+        <TextView android:id="@+id/tvAfternoonPercent" android:text="0%" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+        <!-- Evening -->
+        <TextView android:text="Evening" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <ProgressBar
+            android:id="@+id/progressEvening"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:max="100"/>
+        <TextView android:id="@+id/tvEveningPercent" android:text="0%" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+        <!-- Night -->
+        <TextView android:text="Night" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <ProgressBar
+            android:id="@+id/progressNight"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:max="100"/>
+        <TextView android:id="@+id/tvNightPercent" android:text="0%" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="חזרה"
+            android:layout_marginTop="24dp"/>
+    </LinearLayout>
+</ScrollView>
