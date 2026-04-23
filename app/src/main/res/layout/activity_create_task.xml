@@ -2,6 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/mapmytasksbackround"
     android:padding="24dp">
 
     <LinearLayout
@@ -9,74 +10,131 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Task Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create New Task"
+            android:textSize="24sp"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_marginBottom="24dp"
+            android:layout_gravity="center_horizontal"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Assign To:"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"/>
+
+        <Spinner
+            android:id="@+id/assignToSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@color/white"
+            android:layout_marginBottom="16dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:background="@color/pastel_grey"
+            android:layout_marginBottom="16dp"/>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Task Name"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="8dp"/>
+
         <EditText
             android:id="@+id/taskNameInput"
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:hint="Enter task name"
-            android:padding="8dp"/>
+            android:background="@color/white"
+            android:padding="8dp"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575"/>
 
-
-        <!-- Category selection -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Category"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="16dp"/>
+
         <Spinner
             android:id="@+id/categorySpinner"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="48dp"
+            android:background="@color/white"
+            android:layout_marginTop="4dp"/>
 
-        <!-- Date & Time -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Date  Time"
+            android:text="Date &amp; Time"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="16dp"/>
+
         <Button
             android:id="@+id/dateTimeBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select Date  Time"/>
+            android:text="Select Date &amp; Time"
+            android:backgroundTint="@color/pastel_cyan"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
 
-        <!-- Location -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Location"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="16dp"/>
+
         <Button
             android:id="@+id/locationBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select Location"/>
+            android:text="Select Location"
+            android:backgroundTint="@color/pastel_cyan"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
 
-        <!-- Save Button -->
         <Button
             android:id="@+id/saveTaskBtn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="60dp"
             android:text="Save Task"
             android:layout_marginTop="32dp"
-            android:textColor="@android:color/white"/>
+            android:backgroundTint="@color/pastel_cyan"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
 
         <Button
             android:id="@+id/backBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Back"/>
+            android:text="Back"
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/pastel_grey"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
 
     </LinearLayout>
-
 </ScrollView>

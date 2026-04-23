@@ -15,7 +15,6 @@ import java.text.SimpleDateFormat
 import java.util.*
 import android.widget.Button
 
-
 class WeeklySummary : AppCompatActivity() {
 
     private lateinit var chartDoneTimeSlots: BarChart
@@ -23,15 +22,16 @@ class WeeklySummary : AppCompatActivity() {
     private lateinit var chartDoneCategory: BarChart
     private lateinit var chartPendingCategory: BarChart
 
-    private val timeSlots = listOf("Night", "Morning", "Afternoon", "Evening") // 0-3
+    private val timeSlots = listOf("Morning", "Afternoon", "Evening", "Night")
+
+    // הרשימה המעודכנת שזכרתי עבורך (11 קטגוריות)
     private val categories = listOf(
-        "Work", "Study", "Personal", "Health", "Fitness",
-        "Hobby", "Chores", "Errands", "Social", "Misc"
+        "Work", "Study", "Personal", "Shopping", "Health",
+        "Finance", "Hobby", "Travel", "School", "Chores", "Other"
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_weekly_summary)
 
         chartDoneTimeSlots = findViewById(R.id.chartDoneTime)
@@ -39,73 +39,63 @@ class WeeklySummary : AppCompatActivity() {
         chartDoneCategory = findViewById(R.id.chartDoneCategory)
         chartPendingCategory = findViewById(R.id.chartPendingCategory)
 
-        val btnBack: Button = findViewById(R.id.btnBack)
-        btnBack.setOnClickListener {
-            finish() // Close the screen and return to the previous one
-        }
+        findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
 
         fetchTasks()
     }
 
-    // Fetch tasks from Firestore and compute weekly statistics
     private fun fetchTasks() {
         val user = Firebase.auth.currentUser ?: return
         val db = Firebase.firestore
 
-        // Last full week (Sunday to Saturday)
         val lastWeekDates = getLastFullWeekDates()
-        val weekStart = parseDateTime(lastWeekDates.first() + " 00:00")
-        val weekEnd = parseDateTime(lastWeekDates.last() + " 23:59")
+        // פורמט התאריכים כאן צריך להתאים ל-dd/MM/yyyy
+        val weekStart = parseDateTime("${lastWeekDates.first()} 00:00")
+        val weekEnd = parseDateTime("${lastWeekDates.last()} 23:59")
 
-        // Arrays for time slots
         val doneSlots = FloatArray(4) { 0f }
         val pendingSlots = FloatArray(4) { 0f }
 
-        // Maps for categories
         val doneByCategory = mutableMapOf<String, Float>()
         val pendingByCategory = mutableMapOf<String, Float>()
+
+        // אתחול המפות עם כל הקטגוריות מהרשימה החדשה
         categories.forEach {
             doneByCategory[it] = 0f
             pendingByCategory[it] = 0f
         }
 
-        val weekLabel = "${lastWeekDates.first()} - ${lastWeekDates.last()}"
-
-        if (weekStart == null || weekEnd == null) {
-            // No data - display empty charts
-            displayCharts(doneSlots, pendingSlots, doneByCategory, pendingByCategory, weekLabel)
-            return
-        }
-
         db.collection("users").document(user.uid).collection("tasks")
             .get()
             .addOnSuccessListener { result ->
-
                 for (doc in result) {
                     val task = doc.toObject(Task::class.java)
                     val cal = parseDateTime(task.dateTime) ?: continue
-                    if (cal.before(weekStart) || cal.after(weekEnd)) continue
 
-                    // Determine time slot
+                    if (weekStart != null && weekEnd != null) {
+                        if (cal.before(weekStart) || cal.after(weekEnd)) continue
+                    }
+
+                    // מציאת אינדקס זמן (בוקר, צהריים וכו')
                     val slotIndex = getTimeSlotIndex(cal)
+
+                    // מציאת קטגוריה תואמת מהרשימה (מתעלם מרווחים ואותיות גדולות)
+                    val categoryKey = categories.find { it.equals(task.category.trim(), ignoreCase = true) } ?: "Other"
 
                     if (task.status == TaskStatus.DONE) {
                         doneSlots[slotIndex]++
-                        doneByCategory[task.category] = doneByCategory.getOrDefault(task.category, 0f) + 1
+                        doneByCategory[categoryKey] = doneByCategory.getOrDefault(categoryKey, 0f) + 1
                     } else {
                         pendingSlots[slotIndex]++
-                        pendingByCategory[task.category] = pendingByCategory.getOrDefault(task.category, 0f) + 1
+                        pendingByCategory[categoryKey] = pendingByCategory.getOrDefault(categoryKey, 0f) + 1
                     }
                 }
 
-                displayCharts(doneSlots, pendingSlots, doneByCategory, pendingByCategory, weekLabel)
-            }
-            .addOnFailureListener {
+                val weekLabel = "${lastWeekDates.first()} - ${lastWeekDates.last()}"
                 displayCharts(doneSlots, pendingSlots, doneByCategory, pendingByCategory, weekLabel)
             }
     }
 
-    // Display all charts on screen
     private fun displayCharts(
         doneSlots: FloatArray,
         pendingSlots: FloatArray,
@@ -113,16 +103,17 @@ class WeeklySummary : AppCompatActivity() {
         pendingByCategory: Map<String, Float>,
         weekLabel: String
     ) {
-        // Time slot charts
         setupBarChart(chartDoneTimeSlots, doneSlots.toList(), timeSlots, "Done Tasks ($weekLabel)", android.R.color.holo_green_light)
         setupBarChart(chartPendingTimeSlots, pendingSlots.toList(), timeSlots, "Pending Tasks ($weekLabel)", android.R.color.holo_red_light)
 
-        // Category charts
-        setupBarChart(chartDoneCategory, doneByCategory.values.toList(), categories, "Done by Category ($weekLabel)", android.R.color.holo_green_light)
-        setupBarChart(chartPendingCategory, pendingByCategory.values.toList(), categories, "Pending by Category ($weekLabel)", android.R.color.holo_red_light)
+        // בגרפים של הקטגוריות אנחנו שולחים את הערכים לפי הסדר של רשימת ה-categories שלנו
+        val doneValues = categories.map { doneByCategory[it] ?: 0f }
+        val pendingValues = categories.map { pendingByCategory[it] ?: 0f }
+
+        setupBarChart(chartDoneCategory, doneValues, categories, "Done by Category", android.R.color.holo_green_light)
+        setupBarChart(chartPendingCategory, pendingValues, categories, "Pending by Category", android.R.color.holo_red_light)
     }
 
-    // Get time slot index by hour of day
     private fun getTimeSlotIndex(cal: Calendar): Int {
         val hour = cal.get(Calendar.HOUR_OF_DAY)
         return when (hour) {
@@ -133,63 +124,44 @@ class WeeklySummary : AppCompatActivity() {
         }
     }
 
-    // Configure and show a bar chart
-    private fun setupBarChart(
-        chart: BarChart,
-        values: List<Float>,
-        labels: List<String>,
-        descriptionText: String,
-        colorRes: Int
-    ) {
-        val entries = labels.mapIndexed { index, _ ->
-            BarEntry(index.toFloat(), if (index < values.size) values[index] else 0f)
-        }
-
+    private fun setupBarChart(chart: BarChart, values: List<Float>, labels: List<String>, descriptionText: String, colorRes: Int) {
+        val entries = values.mapIndexed { index, value -> BarEntry(index.toFloat(), value) }
         val dataSet = BarDataSet(entries, "")
         dataSet.color = resources.getColor(colorRes, null)
+        dataSet.valueTextSize = 10f
 
-        val data = BarData(dataSet)
-        data.barWidth = 0.9f
-        chart.data = data
-
+        chart.data = BarData(dataSet)
         chart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
-        chart.xAxis.granularity = 1f
-        chart.xAxis.setDrawLabels(true)
-        chart.xAxis.labelRotationAngle = -45f
-        chart.xAxis.setAvoidFirstLastClipping(true)
         chart.xAxis.position = XAxis.XAxisPosition.BOTTOM
+        chart.xAxis.granularity = 1f
+        chart.xAxis.labelRotationAngle = -45f
 
-        chart.axisLeft.axisMinimum = 0f
         chart.axisRight.isEnabled = false
-
+        chart.axisLeft.axisMinimum = 0f
         chart.description.text = descriptionText
-        chart.setFitBars(true)
+        chart.animateY(1000)
         chart.invalidate()
     }
 
-    // Return dates of the last full week (Sunday-Saturday)
     private fun getLastFullWeekDates(): List<String> {
         val calendar = Calendar.getInstance()
-        calendar.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY)
+        // הולכים אחורה ליום ראשון של השבוע שעבר
         calendar.add(Calendar.WEEK_OF_YEAR, -1)
-        val year = calendar.get(Calendar.YEAR)
-        val formatter = SimpleDateFormat("dd/MM", Locale.getDefault())
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY)
 
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         return List(7) {
-            val dateStr = formatter.format(calendar.time) + "/$year"
+            val dateStr = formatter.format(calendar.time)
             calendar.add(Calendar.DAY_OF_MONTH, 1)
             dateStr
         }
     }
 
-    // Parse date string to Calendar
     private fun parseDateTime(dateTime: String): Calendar? {
         return try {
             val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val date = formatter.parse(dateTime) ?: return null
             Calendar.getInstance().apply { time = date }
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 }

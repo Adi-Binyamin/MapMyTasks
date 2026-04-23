@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import com.google.firebase.auth.FirebaseAuth
 
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
@@ -16,16 +17,17 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         private const val CHANNEL_NAME = "Task Notifications"
     }
 
-    // This runs when the phone gets a signal that we are near a task location
     override fun onReceive(context: Context, intent: Intent) {
-        val taskName = intent.getStringExtra("TASK_NAME") ?: return
-        val taskId = intent.getStringExtra("TASK_ID") ?: ""
-        val userId = intent.getStringExtra("USER_ID") ?: ""
+        val taskName = intent.getStringExtra("TASK_NAME") ?: "Task Nearby"
+        val taskId = intent.getStringExtra("TASK_ID") ?: return
 
-        showNotification(context, taskName, taskId, userId)
+        // במקום להסתמך על USER_ID מה-Intent, אנחנו לוקחים את המשתמש המחובר כרגע.
+        // זה מבטיח שהעדכון של "בוצע" יקרה בבסיס הנתונים הנכון.
+        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        showNotification(context, taskName, taskId, currentUserId)
     }
 
-    // Create and show a notification with "Done" and "Dismiss" buttons
     private fun showNotification(context: Context, taskName: String, taskId: String, userId: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
@@ -35,6 +37,7 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(channel)
         }
 
+        // כפתור "בוצע"
         val markDoneIntent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = "MARK_DONE"
             putExtra("TASK_ID", taskId)
@@ -44,11 +47,12 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
         val markDonePendingIntent = PendingIntent.getBroadcast(
             context,
-            0,
+            taskId.hashCode(), // שימוש ב-hashCode מונע דריסה של התראות שונות
             markDoneIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
 
+        // כפתור "ביטול"
         val dismissIntent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = "DISMISS"
             putExtra("TASK_ID", taskId)
@@ -58,19 +62,20 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
         val dismissPendingIntent = PendingIntent.getBroadcast(
             context,
-            1,
+            taskId.hashCode() + 1, // קוד בקשה ייחודי
             dismissIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Task Reminder")
-            .setContentText(taskName)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("MapMyTasks Reminder")
+            .setContentText("You are near: $taskName")
+            .setSmallIcon(android.R.drawable.ic_dialog_map) // אייקון של מפה מתאים יותר
             .addAction(android.R.drawable.checkbox_on_background, "✅ Done", markDonePendingIntent)
-            .addAction(android.R.drawable.ic_delete, "❌ Dismiss", dismissPendingIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "❌ Dismiss", dismissPendingIntent)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL) // הפעלה של רטט וצליל
             .build()
 
         notificationManager.notify(taskId.hashCode(), notification)

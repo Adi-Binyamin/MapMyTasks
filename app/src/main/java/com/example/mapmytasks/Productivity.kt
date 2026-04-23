@@ -12,9 +12,10 @@ import java.util.*
 
 class Productivity : AppCompatActivity() {
 
+    // הרשימה המעודכנת שתואמת ל-CreateTask ו-EditTask
     private val categories = listOf(
-        "Work", "Study", "Personal", "Health", "Fitness",
-        "Hobby", "Chores", "Errands", "Social", "Misc"
+        "Work", "Study", "Personal", "Shopping", "Health",
+        "Finance", "Hobby", "Travel", "School", "Chores", "Other"
     )
 
     private lateinit var spinner: Spinner
@@ -31,11 +32,11 @@ class Productivity : AppCompatActivity() {
     private val doneMap = mutableMapOf<String, FloatArray>()
     private val totalMap = mutableMapOf<String, IntArray>()
 
-    // Initializes UI elements and starts loading productivity data
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_productivity)
 
+        // אתחול רכיבי UI
         spinner = findViewById(R.id.categorySpinner)
         progressMorning = findViewById(R.id.progressMorning)
         progressAfternoon = findViewById(R.id.progressAfternoon)
@@ -47,24 +48,21 @@ class Productivity : AppCompatActivity() {
         tvEveningPercent = findViewById(R.id.tvEveningPercent)
         tvNightPercent = findViewById(R.id.tvNightPercent)
 
-        val btnBack: Button = findViewById(R.id.btnBack)
-        btnBack.setOnClickListener {
+        findViewById<Button>(R.id.btnBack).setOnClickListener {
             finish()
         }
 
-        spinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            categories
-        )
+        // הגדרת הספינר עם הרשימה החדשה
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
+        spinner.adapter = adapter
 
         fetchDataFromFirebase()
     }
 
-    // Loads tasks from Firebase and calculates productivity per time of day
     private fun fetchDataFromFirebase() {
         val user = Firebase.auth.currentUser ?: return
 
+        // איפוס מפות הנתונים לפי הרשימה החדשה
         categories.forEach {
             doneMap[it] = FloatArray(4)
             totalMap[it] = IntArray(4)
@@ -78,73 +76,69 @@ class Productivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { result ->
                 for (doc in result) {
-                    val rawCategory = doc.getString("category") ?: "Misc"
-                    val category = if (categories.contains(rawCategory)) rawCategory else "Misc"
+                    val task = doc.toObject(Task::class.java)
 
-                    val status = try {
-                        TaskStatus.valueOf(doc.getString("status") ?: "PENDING")
-                    } catch (e: Exception) {
-                        TaskStatus.PENDING
-                    }
+                    // חיפוש חכם של הקטגוריה כדי למנוע טעויות הקלדה ב-Database
+                    val category = categories.find { it.equals(task.category.trim(), ignoreCase = true) } ?: "Other"
 
-                    val dateTime = doc.getString("dateTime") ?: continue
-                    val taskCal = parseDateTime(dateTime) ?: continue
+                    val taskCal = parseDateTime(task.dateTime) ?: continue
 
+                    // מחשבים פרודוקטיביות רק על משימות שעבר זמן היעד שלהן
                     if (taskCal.after(now)) continue
 
                     val hour = taskCal.get(Calendar.HOUR_OF_DAY)
                     val timeIndex = when (hour) {
-                        in 6..11 -> 0
-                        in 12..17 -> 1
-                        in 18..21 -> 2
-                        else -> 3
+                        in 6..11 -> 0   // בוקר
+                        in 12..17 -> 1  // צהריים
+                        in 18..21 -> 2  // ערב
+                        else -> 3       // לילה
                     }
 
-                    totalMap[category]!![timeIndex]++
-                    if (status == TaskStatus.DONE) {
-                        doneMap[category]!![timeIndex]++
+                    totalMap[category]?.let { it[timeIndex]++ }
+                    if (task.status == TaskStatus.DONE) {
+                        doneMap[category]?.let { it[timeIndex]++ }
                     }
                 }
 
+                // עדכון ראשוני של הגרפים לפי הקטגוריה הראשונה (Work)
                 updateProgressBars(categories[0])
-                spinner.setSelection(0)
 
+                // הגדרת מאזין לשינויים בספינר
                 spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(
-                        parent: AdapterView<*>?,
-                        view: View?,
-                        position: Int,
-                        id: Long
-                    ) {
-                        updateProgressBars(categories[position])
+                    override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                        updateProgressBars(categories[pos])
                     }
-
-                    override fun onNothingSelected(parent: AdapterView<*>?) {}
+                    override fun onNothingSelected(p: AdapterView<*>?) {}
                 }
             }
     }
 
-    // Updates progress bars and percentage labels for the selected category
     private fun updateProgressBars(category: String) {
-        val done = doneMap[category]!!
-        val total = totalMap[category]!!
+        val done = doneMap[category] ?: FloatArray(4)
+        val total = totalMap[category] ?: IntArray(4)
 
-        fun percent(done: Float, total: Int): Int {
-            return if (total == 0) 0 else ((done / total) * 100).toInt()
+        fun percent(d: Float, t: Int): Int {
+            return if (t <= 0) 0 else ((d / t) * 100).toInt()
         }
 
-        progressMorning.progress = percent(done[0], total[0])
-        progressAfternoon.progress = percent(done[1], total[1])
-        progressEvening.progress = percent(done[2], total[2])
-        progressNight.progress = percent(done[3], total[3])
+        // עדכון גרפים וטקסט אחוזים
+        val pMorning = percent(done[0], total[0])
+        progressMorning.progress = pMorning
+        tvMorningPercent.text = "$pMorning%"
 
-        tvMorningPercent.text = "${progressMorning.progress}%"
-        tvAfternoonPercent.text = "${progressAfternoon.progress}%"
-        tvEveningPercent.text = "${progressEvening.progress}%"
-        tvNightPercent.text = "${progressNight.progress}%"
+        val pAfternoon = percent(done[1], total[1])
+        progressAfternoon.progress = pAfternoon
+        tvAfternoonPercent.text = "$pAfternoon%"
+
+        val pEvening = percent(done[2], total[2])
+        progressEvening.progress = pEvening
+        tvEveningPercent.text = "$pEvening%"
+
+        val pNight = percent(done[3], total[3])
+        progressNight.progress = pNight
+        tvNightPercent.text = "$pNight%"
     }
 
-    // Parses task date string into a Calendar object
     private fun parseDateTime(dateTime: String): Calendar? {
         return try {
             val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())

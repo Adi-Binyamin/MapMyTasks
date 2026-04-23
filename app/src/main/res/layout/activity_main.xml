@@ -1,52 +1,170 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:gravity="center"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/mapmytasksbackround"
     android:padding="24dp">
 
-    <TextView
-        android:id="@+id/titleText"
-        android:text="MAP MY TASK"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="40dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
-
-    <Button
-        android:id="@+id/createTaskBtn"
-        android:text="Create Task"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"/>
-    <Button
-        android:id="@+id/productivityBtn"
-        android:text="Productivity Insights"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginBottom="20dp">
 
+        <Button
+            android:id="@+id/gameBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:text="Get a Task 💙"
+            android:backgroundTint="@color/pastel_cyan"
+            android:textColor="@color/black"
+            android:textSize="12sp"
+            android:textAllCaps="false" />
 
-    <Button
-        android:id="@+id/assignTaskBtn"
-        android:text="Assign Task"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"/>
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="40dp"
+            android:text="MAP MY TASK"
+            android:textSize="38sp"
+            android:fontFamily="sans-serif-black"
+            android:textStyle="bold"
+            android:textColor="#2196F3"
+            android:letterSpacing="0.03"
+            android:shadowColor="#CC000000"
+            android:shadowDx="5"
+            android:shadowDy="5"
+            android:shadowRadius="10"
+            android:padding="8dp"/>
+    </RelativeLayout>
 
-    <Button
-        android:id="@+id/weeklyStatsBtn"
-        android:text="Weekly Statistics"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"/>
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center">
 
-    <Button
-        android:id="@+id/myTasksBtn"
-        android:text="My Tasks"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/createTaskBtn"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Create Task"
+                android:backgroundTint="@color/pastel_baby_blue"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:drawableTop="@android:drawable/ic_input_add"
+                android:drawableTint="@android:color/darker_gray"
+                android:drawablePadding="8dp"
+                android:paddingTop="15dp"/>
+
+            <Button
+                android:id="@+id/myTasksBtn"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="My Tasks"
+                android:backgroundTint="@color/pastel_mint"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:drawableTop="@android:drawable/ic_menu_agenda"
+                android:drawableTint="@android:color/darker_gray"
+                android:drawablePadding="8dp"
+                android:paddingTop="15dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/productivityBtn"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Productivity"
+                android:backgroundTint="@color/pastel_rose"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:drawableTop="@android:drawable/ic_menu_view"
+                android:drawableTint="@android:color/darker_gray"
+                android:drawablePadding="8dp"
+                android:paddingTop="15dp"/>
+
+            <Button
+                android:id="@+id/weeklyStatsBtn"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Weekly Stats"
+                android:backgroundTint="@color/pastel_yellow"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:drawableTop="@android:drawable/ic_menu_recent_history"
+                android:drawableTint="@android:color/darker_gray"
+                android:drawablePadding="8dp"
+                android:paddingTop="15dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <Button
+                android:id="@+id/partnerManagementBtn"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Partners"
+                android:backgroundTint="@color/pastel_lavender"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:drawableTop="@android:drawable/ic_menu_share"
+                android:drawableTint="@android:color/darker_gray"
+                android:drawablePadding="8dp"
+                android:paddingTop="15dp"/>
+
+            <Button
+                android:id="@+id/btnLogout"
+                android:layout_width="0dp"
+                android:layout_height="120dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Logout"
+                android:backgroundTint="@color/pastel_pink"
+                android:textColor="@color/black"
+                android:textAllCaps="false"
+                android:textStyle="bold"
+                android:drawableTop="@android:drawable/ic_lock_power_off"
+                android:drawableTint="@android:color/darker_gray"
+                android:drawablePadding="8dp"
+                android:paddingTop="15dp"/>
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

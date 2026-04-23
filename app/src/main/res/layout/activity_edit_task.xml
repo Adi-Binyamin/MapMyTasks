@@ -2,6 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/mapmytasksbackround"
     android:padding="24dp">
 
     <LinearLayout
@@ -9,82 +10,119 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Task Name -->
+        <TextView
+            android:id="@+id/createdByTv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Created by: Loading..."
+            android:textSize="14sp"
+            android:textColor="@color/black"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Task Name"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="8dp"/>
+
         <EditText
             android:id="@+id/taskNameEdit"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter task name"/>
+            android:layout_height="48dp"
+            android:hint="Enter task name"
+            android:background="@color/white"
+            android:padding="8dp"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/black"
+            android:textColorHint="#757575"/>
 
-        <!-- Category -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Category"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="16dp"/>
+
         <Spinner
             android:id="@+id/categorySpinner"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="48dp"
+            android:background="@color/white"
+            android:layout_marginTop="4dp"/>
 
-        <!-- Date & Time -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Date and Time"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="16dp"/>
+
         <Button
             android:id="@+id/dateTimeBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select Date and Time"/>
+            android:text="Select Date and Time"
+            android:backgroundTint="@color/pastel_cyan"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
 
-        <!-- Location -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Location"
+            android:textColor="@color/black"
+            android:textStyle="bold"
             android:textSize="16sp"
             android:layout_marginTop="16dp"/>
+
         <Button
             android:id="@+id/locationBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select Location"/>
+            android:text="Select Location"
+            android:backgroundTint="@color/pastel_cyan"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
 
-        <!-- Save Button -->
         <Button
             android:id="@+id/saveTaskBtn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:text="Save Task"
             android:layout_marginTop="32dp"
-            android:textColor="@android:color/white"/>
+            android:backgroundTint="@color/pastel_cyan"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:textSize="18sp"/>
 
-        <!-- Delete Button -->
         <Button
             android:id="@+id/deleteTaskBtn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:text="Delete Task"
-            android:layout_marginTop="16dp"
-            android:textColor="@android:color/white"/>
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/pastel_grey"
+            android:textColor="@color/black"
+            android:textStyle="bold"/>
 
-        <!-- Back Button -->
         <Button
             android:id="@+id/backBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Back"
-            android:layout_marginTop="16dp"/>
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/pastel_grey"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
 
     </LinearLayout>
 </ScrollView>

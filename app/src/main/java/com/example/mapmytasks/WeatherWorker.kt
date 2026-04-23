@@ -28,14 +28,20 @@ class WeatherWorker(
         val lon = inputData.getDouble("lon", 0.0)
         val taskName = inputData.getString("taskName") ?: "משימה"
 
-        if (lat == 0.0 || lon == 0.0) return Result.success()
+        // קבלת תאריך המשימה המקורי (למשל: 20/02/2024 10:00)
+        val taskDateTime = inputData.getString("taskDateTime") ?: ""
+
+        if (lat == 0.0 || lon == 0.0 || taskDateTime.isEmpty()) return Result.success()
 
         try {
-            val url =
-                "https://api.openweathermap.org/data/2.5/forecast" +
-                        "?lat=$lat&lon=$lon" +
-                        "&units=metric" +
-                        "&appid=9daee5d8fbe2b45d8827dac821dd20d9"
+            // המרת התאריך לפורמט של ה-API (yyyy-MM-dd) כדי שנדע איזה יום לחפש בתחזית
+            val taskDateOnly = try {
+                val parser = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                formatter.format(parser.parse(taskDateTime.split(" ")[0])!!)
+            } catch (e: Exception) { "" }
+
+            val url = "https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&units=metric&appid=9daee5d8fbe2b45d8827dac821dd20d9"
 
             val client = OkHttpClient()
             val request = Request.Builder().url(url).build()
@@ -45,44 +51,39 @@ class WeatherWorker(
             val json = JSONObject(body)
             val list = json.getJSONArray("list")
 
-            val calendar = Calendar.getInstance()
-            calendar.add(Calendar.DAY_OF_YEAR, 1)
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val tomorrowStr = dateFormat.format(calendar.time)
-
             var isRain = false
             var maxTemp = Double.MIN_VALUE
+            var foundData = false
 
+            // סריקת התחזית וחיפוש נתונים שמתאימים ליום המשימה
             for (i in 0 until list.length()) {
                 val item = list.getJSONObject(i)
-                val dateText = item.getString("dt_txt")
+                val dtText = item.getString("dt_txt") // פורמט: "2024-02-20 12:00:00"
 
-                if (dateText.startsWith(tomorrowStr)) {
+                if (dtText.startsWith(taskDateOnly)) {
+                    foundData = true
                     val temp = item.getJSONObject("main").getDouble("temp")
                     maxTemp = maxOf(maxTemp, temp)
 
                     val weatherArray = item.getJSONArray("weather")
                     for (j in 0 until weatherArray.length()) {
-                        val main = weatherArray.getJSONObject(j).getString("main")
-                        if (main.contains("Rain")) {
+                        if (weatherArray.getJSONObject(j).getString("main").contains("Rain", true)) {
                             isRain = true
                         }
                     }
                 }
             }
 
-            if (isRain || maxTemp >= 30) {
+            // אם מצאנו נתונים ויש תנאי קיצוני - שולחים התראה (אנחנו עכשיו 24 שעות לפני המשימה)
+            if (foundData && (isRain || maxTemp >= 30)) {
                 sendNotification(taskName, isRain, maxTemp)
             }
 
             return Result.success()
-
         } catch (e: Exception) {
-            e.printStackTrace()
             return Result.retry()
         }
     }
-
     // Sends a notification about tomorrow's weather
     private fun sendNotification(
         taskName: String,

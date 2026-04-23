@@ -5,43 +5,66 @@
     android:gravity="center"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/mapmytasksbackround"
     android:padding="24dp">
 
     <TextView
-        android:text="Login"
-        android:textSize="26sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="24dp"
+        android:id="@+id/titleText"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="MAP MY TASK"
+        android:textSize="38sp" android:fontFamily="sans-serif-black"
+        android:textStyle="bold"
+        android:textColor="#2196F3"
+        android:letterSpacing="0.03" android:shadowColor="#CC000000" android:shadowDx="5"
+        android:shadowDy="5"
+        android:shadowRadius="10" android:layout_marginBottom="40dp"
+        android:padding="8dp"/>
 
     <EditText
         android:id="@+id/emailEditText"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
         android:hint="Email"
         android:inputType="textEmailAddress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:background="@color/white"
+        android:padding="12dp"
+        android:textColor="@color/black"
+        android:textColorHint="#757575"
+        android:layout_marginBottom="16dp"/>
 
     <EditText
         android:id="@+id/passwordEditText"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
         android:hint="Password"
         android:inputType="textPassword"
-        android:layout_marginTop="16dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:background="@color/white"
+        android:padding="12dp"
+        android:textColor="@color/black"
+        android:textColorHint="#757575"/>
 
     <Button
         android:id="@+id/loginButton"
-        android:text="Login"
-        android:layout_marginTop="20dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="56dp"
+        android:text="Login"
+        android:layout_marginTop="32dp"
+        android:backgroundTint="@color/pastel_cyan"
+        android:textColor="@color/black"
+        android:textStyle="bold"
+        android:textAllCaps="false"/>
 
     <Button
         android:id="@+id/registerButton"
-        android:text="Register"
-        android:layout_marginTop="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="56dp"
+        android:text="Create Account"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="@color/pastel_grey"
+        android:textColor="@color/black"
+        android:textAllCaps="false"/>
+
+
 
 </LinearLayout>

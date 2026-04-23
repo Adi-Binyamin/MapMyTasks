@@ -2,4 +2,24 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="pastel_pink">#FFD1DC</color>
+    <color name="pastel_rose">#FFB7CE</color>
+    <color name="pastel_lavender">#E6E6FA</color>
+    <color name="pastel_mauve">#D4AFB9</color>
+
+    <color name="pastel_blue">#AEC6CF</color>
+    <color name="pastel_baby_blue">#89CFF0</color>
+    <color name="pastel_cyan">#B3E5FC</color>
+
+    <color name="pastel_green">#B2E2F2</color> <color name="pastel_mint">#BFFCC6</color>
+    <color name="pastel_sage">#C1D7AE</color>
+
+    <color name="pastel_yellow">#FFF9C4</color>
+    <color name="pastel_lemon">#FFFFBA</color>
+    <color name="pastel_peach">#FFDAB9</color>
+    <color name="pastel_apricot">#FFCC99</color>
+
+    <color name="pastel_beige">#F5F5DC</color>
+    <color name="pastel_grey">#CFD8DC</color>
 </resources>

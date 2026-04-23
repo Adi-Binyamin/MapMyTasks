@@ -1,5 +1,6 @@
 package com.example.mapmytasks
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 
 object TaskManager {
@@ -7,7 +8,7 @@ object TaskManager {
     private val db = FirebaseFirestore.getInstance()
     private val tasks = mutableListOf<Task>()
 
-    // Gets all tasks from Firestore
+    // משיכת כל המשימות של המשתמש
     fun fetchTasks(userId: String, onComplete: (() -> Unit)? = null) {
         tasks.clear()
         db.collection("users")
@@ -16,60 +17,66 @@ object TaskManager {
             .get()
             .addOnSuccessListener { result ->
                 for (doc in result.documents) {
+                    // חשוב: copy(id = doc.id) מוודא שה-ID מה-Firebase נכנס לאובייקט
                     val task = doc.toObject(Task::class.java)?.copy(id = doc.id)
                     task?.let { tasks.add(it) }
                 }
                 onComplete?.invoke()
             }
-            .addOnFailureListener { e -> e.printStackTrace() }
+            .addOnFailureListener { e ->
+                Log.e("TaskManager", "Error fetching tasks", e)
+            }
     }
 
-    // Adds a new task to Firestore and local list
+    // הוספת משימה - שים לב שהוספנו עדכון ל-ID מיד לאחר השמירה
     fun addTask(userId: String, task: Task, onComplete: (() -> Unit)? = null) {
         db.collection("users")
             .document(userId)
             .collection("tasks")
             .add(task)
             .addOnSuccessListener { docRef ->
+                // עדכון ה-ID בתוך המסמך עצמו ב-Firebase כדי שיהיה מסונכרן
+                docRef.update("id", docRef.id)
+
                 val savedTask = task.copy(id = docRef.id)
                 tasks.add(savedTask)
                 onComplete?.invoke()
             }
-            .addOnFailureListener { e -> e.printStackTrace() }
+            .addOnFailureListener { e ->
+                Log.e("TaskManager", "Error adding task", e)
+            }
     }
 
-    // Marks a task as done
+    // עדכון סטטוס משימה ל-"בוצע"
     fun markTaskDone(userId: String, taskId: String) {
-        val task = tasks.find { it.id == taskId } ?: return
-        task.status = TaskStatus.DONE
-
-        db.collection("users")
-            .document(userId)
-            .collection("tasks")
-            .document(taskId)
-            .update("status", TaskStatus.DONE.name)
+        updateStatus(userId, taskId, TaskStatus.DONE)
     }
 
-    // Marks a task as missed
+    // עדכון סטטוס משימה ל-"פוספס"
     fun markTaskMissed(userId: String, taskId: String) {
-        val task = tasks.find { it.id == taskId } ?: return
-        task.status = TaskStatus.MISSED
+        updateStatus(userId, taskId, TaskStatus.MISSED)
+    }
+
+    // פונקציית עזר פרטית למניעת חזרתיות בקוד
+    private fun updateStatus(userId: String, taskId: String, newStatus: TaskStatus) {
+        val task = tasks.find { it.id == taskId }
+        task?.status = newStatus
 
         db.collection("users")
             .document(userId)
             .collection("tasks")
             .document(taskId)
-            .update("status", TaskStatus.MISSED.name)
+            .update("status", newStatus.name)
+            .addOnFailureListener { e ->
+                Log.e("TaskManager", "Error updating status", e)
+            }
     }
 
-    // Returns all tasks
     fun getTasks(): List<Task> = tasks
 
-    // Returns tasks in a specific category
     fun getTasksByCategory(category: String): List<Task> =
         tasks.filter { it.category == category }
 
-    // Returns tasks with a specific status
     fun getTasksByStatus(status: TaskStatus): List<Task> =
         tasks.filter { it.status == status }
 }

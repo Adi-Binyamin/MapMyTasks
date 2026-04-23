@@ -42,6 +42,10 @@
         <activity android:name=".TasksScreen" android:exported="false" />
         <activity android:name=".EditTask" android:exported="false" />
         <activity android:name=".CreateTask" android:exported="false" />
+        <activity android:name=".PartnerManagement" android:exported="false" />
+        <activity android:name=".SentTasksActivity" android:exported="false" />
+        <activity android:name=".BalloonGameActivity" android:exported="false" />
+
 
         <!-- MainActivity חייב להיות exported=true בשביל Intent -->
         <activity

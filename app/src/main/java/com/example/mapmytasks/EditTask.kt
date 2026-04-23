@@ -41,6 +41,9 @@ class EditTask : AppCompatActivity() {
     private lateinit var deleteTaskBtn: Button
     private lateinit var backBtn: Button
 
+    private lateinit var createdByTv: TextView
+    private var taskOwnerId: String = "" // ה-UID של בעל המשימה (את או חבר)
+
     private var selectedDateTime: String = ""
     private var selectedLocation: String = ""
     private var selectedLat: Double = 0.0
@@ -48,10 +51,8 @@ class EditTask : AppCompatActivity() {
 
     companion object {
         private const val LOCATION_REQUEST_CODE = 1001
-        private const val LOCATION_PERMISSION_REQUEST_CODE = 2001
     }
 
-    // Set up the screen and find all the views
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_task)
@@ -87,7 +88,50 @@ class EditTask : AppCompatActivity() {
         categorySpinner.adapter = adapter
     }
 
-    // Open pickers to change the date and time of the task
+    // פונקציית אלגוריתם האזהרה - בודקת האם המשתמש נוטה לבטל בטווח זמן זה
+    private fun checkProductivityWarning(category: String, dateTime: String) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        val hour = try {
+            dateTime.split(" ")[1].split(":")[0].toInt()
+        } catch (e: Exception) { return }
+
+        val timeIndex = when (hour) {
+            in 6..11 -> 0      // בוקר
+            in 12..17 -> 1     // צהריים
+            in 18..21 -> 2     // ערב
+            else -> 3          // לילה
+        }
+
+        FirebaseFirestore.getInstance().collection("users")
+            .document(userId).collection("tasks")
+            .whereEqualTo("category", category)
+            .get()
+            .addOnSuccessListener { result ->
+                var total = 0
+                var done = 0
+                for (doc in result) {
+                    val taskDate = doc.getString("dateTime") ?: continue
+                    val taskHour = try { taskDate.split(" ")[1].split(":")[0].toInt() } catch(e:Exception) { -1 }
+                    val taskIndex = when (taskHour) {
+                        in 6..11 -> 0
+                        in 12..17 -> 1
+                        in 18..21 -> 2
+                        else -> 3
+                    }
+                    if (taskIndex == timeIndex) {
+                        total++
+                        if (doc.getString("status") == "DONE") done++
+                    }
+                }
+                // אם היו לפחות 3 משימות ואחוז ההצלחה נמוך מ-50%
+                if (total >= 3 && (done.toFloat() / total) < 0.5) {
+                    val timeNames = listOf("בבוקר", "בצהריים", "בערב", "בלילה")
+                    toast("⚠️ שים לב: בדרך כלל את נוטה לא לסיים משימות $category ${timeNames[timeIndex]}. אולי כדאי לשנות שעה?")
+                }
+            }
+    }
+
     private fun setupDateTimePicker() {
         dateTimeBtn.setOnClickListener {
             val calendar = Calendar.getInstance()
@@ -95,13 +139,16 @@ class EditTask : AppCompatActivity() {
                 TimePickerDialog(this, { _, hour, minute ->
                     selectedDateTime = String.format("%02d/%02d/%04d %02d:%02d", day, month + 1, year, hour, minute)
                     dateTimeBtn.text = selectedDateTime
+
+                    // הפעלת אלגוריתם האזהרה החכם
+                    checkProductivityWarning(categorySpinner.selectedItem.toString(), selectedDateTime)
+
                     checkHolidayHebcal(year, month + 1, day)
                 }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
             }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
         }
     }
 
-    // Check if the selected date has a Jewish holiday
     private fun checkHolidayHebcal(year: Int, month: Int, day: Int) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
@@ -153,10 +200,16 @@ class EditTask : AppCompatActivity() {
         }
     }
 
-    // Get the current task details from Firebase to show on screen
     private fun loadTaskData() {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        FirebaseFirestore.getInstance().collection("users").document(userId).collection("tasks").document(taskId).get()
+        // מומלץ להעביר את ה-OwnerID ב-Intent מהמסך הקודם
+        taskOwnerId = intent.getStringExtra("OWNER_ID") ?: FirebaseAuth.getInstance().currentUser?.uid ?: return
+        createdByTv = findViewById(R.id.createdByTv)
+
+        FirebaseFirestore.getInstance().collection("users")
+            .document(taskOwnerId)
+            .collection("tasks")
+            .document(taskId)
+            .get()
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
                     taskNameEdit.setText(doc.getString("name"))
@@ -166,6 +219,12 @@ class EditTask : AppCompatActivity() {
                     selectedLat = doc.getDouble("latitude") ?: 0.0
                     selectedLng = doc.getDouble("longitude") ?: 0.0
                     locationBtn.text = selectedLocation
+
+                    // הצגת מי יצר את המשימה
+                    val creator = doc.getString("createdBy") ?: "You"
+                    createdByTv.text = "Created by: $creator"
+                    createdByTv.visibility = android.view.View.VISIBLE
+
                     val category = doc.getString("category")
                     val spinnerPosition = (categorySpinner.adapter as ArrayAdapter<String>).getPosition(category)
                     categorySpinner.setSelection(spinnerPosition)
@@ -173,9 +232,8 @@ class EditTask : AppCompatActivity() {
             }
     }
 
-    // Update the task in Firebase with the new information
     private fun saveTaskChanges() {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        if (taskOwnerId.isEmpty()) return
         val taskName = taskNameEdit.text.toString().trim()
 
         val updatedTask = Task(
@@ -187,22 +245,25 @@ class EditTask : AppCompatActivity() {
             latitude = selectedLat,
             longitude = selectedLng,
             status = TaskStatus.PENDING,
-            isActive = true
+            isActive = true,
+            createdBy = createdByTv.text.toString().replace("Created by: ", "")
         )
 
-        FirebaseFirestore.getInstance().collection("users").document(userId).collection("tasks").document(taskId)
+        // שומרים תחת ה-Owner המקורי של המשימה
+        FirebaseFirestore.getInstance().collection("users")
+            .document(taskOwnerId)
+            .collection("tasks")
+            .document(taskId)
             .set(updatedTask)
             .addOnSuccessListener {
-                toast("Task saved successfully")
-
+                toast("Task updated successfully")
                 scheduleSmartWeatherCheck(updatedTask)
-
                 setResult(RESULT_OK)
                 finish()
             }
     }
 
-    // Reset the weather check timer after editing the task
+    // תזמון בדיקת מזג האוויר - 24 שעות לפני המשימה
     private fun scheduleSmartWeatherCheck(task: Task) {
         try {
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
@@ -210,13 +271,15 @@ class EditTask : AppCompatActivity() {
             val now = System.currentTimeMillis()
 
             val twentyFourHoursInMillis = 24 * 60 * 60 * 1000L
-            val delay = (taskDate.time - twentyFourHoursInMillis) - now
+            val targetTime = taskDate.time - twentyFourHoursInMillis
+            val delay = targetTime - now
             val finalDelay = if (delay > 0) delay else 0L
 
             val data = workDataOf(
                 "lat" to task.latitude,
                 "lon" to task.longitude,
-                "taskName" to task.name
+                "taskName" to task.name,
+                "taskDateTime" to task.dateTime // שליחת תאריך המשימה ל-Worker
             )
 
             val workRequest = OneTimeWorkRequestBuilder<WeatherWorker>()
@@ -232,13 +295,16 @@ class EditTask : AppCompatActivity() {
         } catch (e: Exception) { e.printStackTrace() }
     }
 
-    // Delete this task from Firebase
     private fun deleteTask() {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        FirebaseFirestore.getInstance().collection("users").document(userId).collection("tasks").document(taskId)
+        if (taskOwnerId.isEmpty()) return
+        FirebaseFirestore.getInstance().collection("users")
+            .document(taskOwnerId)
+            .collection("tasks")
+            .document(taskId)
             .delete()
             .addOnSuccessListener {
                 WorkManager.getInstance(this).cancelUniqueWork("weather_$taskId")
+                toast("Task deleted")
                 setResult(RESULT_OK)
                 finish()
             }
