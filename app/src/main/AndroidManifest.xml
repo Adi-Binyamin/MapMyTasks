@@ -60,7 +60,7 @@
 
         <!-- ריסיברים להתראות ולגאופנס -->
         <receiver android:name=".NotificationActionReceiver" />
-        <receiver android:name=".GeofenceBroadcastReceiver" />
+
 
 
     </application>

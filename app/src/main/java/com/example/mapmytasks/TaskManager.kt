@@ -254,8 +254,4 @@ object TaskManager {
             onSuccess(doneSlots, pendingSlots, doneByCat, pendingByCat, weekDates)
         }
     }
-
-    fun getTasks(): List<Task> = tasks
-    fun getTasksByCategory(category: String): List<Task> = tasks.filter { it.category == category }
-    fun getTasksByStatus(status: TaskStatus): List<Task> = tasks.filter { it.status == status }
 }

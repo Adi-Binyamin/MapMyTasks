@@ -89,9 +89,4 @@ class TasksAdapter(
 
         holder.editBtn.setOnClickListener { onEditClick(task) }
     }
-
-    fun updateTasks(newTasks: List<Task>) {
-        this.tasks = newTasks
-        notifyDataSetChanged()
-    }
 }
