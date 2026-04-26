@@ -10,7 +10,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -25,6 +27,20 @@ class LocationTaskService : Service() {
     private lateinit var locationCallback: LocationCallback
     private val notifiedTasks = mutableSetOf<String>()
 
+    // חדש: משתנים לשמירת מיקום אחרון וטיימר עצמאי שלא תלוי בתזוזת המכשיר
+    private var lastLat: Double = 0.0
+    private var lastLng: Double = 0.0
+    private val handler = Handler(Looper.getMainLooper())
+    private val timeCheckRunnable = object : Runnable {
+        override fun run() {
+            // מריץ בדיקת משימות כל 10 שניות על בסיס המיקום האחרון הידוע
+            if (lastLat != 0.0 && lastLng != 0.0) {
+                checkTasks(lastLat, lastLng)
+            }
+            handler.postDelayed(this, 10000L)
+        }
+    }
+
     companion object {
         private const val FOREGROUND_ID = 1
         private const val CHANNEL_ID = "task_service_channel"
@@ -34,7 +50,6 @@ class LocationTaskService : Service() {
         private const val TAG = "TASK_NOTIFY"
     }
 
-    // Start the background service and setup notification channel
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service created")
@@ -58,14 +73,19 @@ class LocationTaskService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation ?: return
-                checkTasks(location.latitude, location.longitude)
+                // שומרים את המיקום האחרון בכל פעם שה-GPS מספק אותו
+                lastLat = location.latitude
+                lastLng = location.longitude
+                checkTasks(lastLat, lastLng)
             }
         }
 
         startLocationUpdates()
+
+        // הפעלת הטיימר העצמאי
+        handler.post(timeCheckRunnable)
     }
 
-    // Ask for location and start tracking the user position
     private fun startLocationUpdates() {
         val request = LocationRequest.create().apply {
             interval = CHECK_INTERVAL_MS
@@ -94,7 +114,6 @@ class LocationTaskService : Service() {
         }
     }
 
-    // Check all tasks from Firebase to see if we are close to a task location
     private fun checkTasks(lat: Double, lng: Double) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val db = FirebaseFirestore.getInstance()
@@ -106,16 +125,9 @@ class LocationTaskService : Service() {
             for (doc in tasks) {
                 val task = doc.toObject(Task::class.java)
                 val taskId = doc.id
-                if (notifiedTasks.contains(taskId)) continue
+
+                if (task.status != TaskStatus.PENDING) continue
                 if (task.dateTime.isEmpty()) continue
-
-                val taskLat = task.latitude
-                val taskLng = task.longitude
-                if (taskLat == 0.0 && taskLng == 0.0) continue
-
-                val distance = FloatArray(1)
-                android.location.Location.distanceBetween(lat, lng, taskLat, taskLng, distance)
-                if (distance[0] > GEOFENCE_RADIUS_METERS) continue
 
                 val parts = task.dateTime.split(" ", "/", ":")
                 if (parts.size < 5) continue
@@ -127,9 +139,30 @@ class LocationTaskService : Service() {
                 }
 
                 val diff = now.timeInMillis - taskCal.timeInMillis
-                if (diff in 0..30_000) {
-                    showNotification(task.name, taskId, userId)
-                    notifiedTasks.add(taskId)
+
+                // 1. עברה יותר מדקה - הפוך ל-MISSED
+                if (diff >= 60000) {
+                    updateTaskStatusInFirebase(userId, taskId, TaskStatus.MISSED)
+                    continue
+                }
+
+                // 2. אנחנו בדיוק באותה הדקה (חלון של 60 שניות בלבד)
+                val isSameMinute = diff in 0..59999
+
+                if (isSameMinute) {
+                    val taskLat = task.latitude
+                    val taskLng = task.longitude
+                    if (taskLat == 0.0 && taskLng == 0.0) continue
+
+                    val distance = FloatArray(1)
+                    android.location.Location.distanceBetween(lat, lng, taskLat, taskLng, distance)
+
+                    if (distance[0] <= GEOFENCE_RADIUS_METERS) {
+                        if (!notifiedTasks.contains(taskId)) {
+                            showNotification(task.name, taskId, userId)
+                            notifiedTasks.add(taskId)
+                        }
+                    }
                 }
             }
         }.addOnFailureListener {
@@ -137,7 +170,15 @@ class LocationTaskService : Service() {
         }
     }
 
-    // Show a notification alert when the user is at the right place and time
+    private fun updateTaskStatusInFirebase(userId: String, taskId: String, status: TaskStatus) {
+        FirebaseFirestore.getInstance().collection("users")
+            .document(userId).collection("tasks").document(taskId)
+            .update("status", status.name)
+            .addOnSuccessListener {
+                Log.d(TAG, "Task $taskId marked as ${status.name} automatically")
+            }
+    }
+
     private fun showNotification(taskName: String, taskId: String, userId: String) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notifChannelId = "task_channel"
@@ -160,10 +201,10 @@ class LocationTaskService : Service() {
         }
 
         val markDonePendingIntent = PendingIntent.getBroadcast(
-            this, 0, markDoneIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            this, taskId.hashCode(), markDoneIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
         val dismissPendingIntent = PendingIntent.getBroadcast(
-            this, 1, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            this, taskId.hashCode() + 1, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
 
         val notification = NotificationCompat.Builder(this, notifChannelId)
@@ -181,9 +222,10 @@ class LocationTaskService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // Stop tracking location when the service is closed
     override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        // חשוב: עוצרים את הטיימר כשהשירות נסגר
+        handler.removeCallbacks(timeCheckRunnable)
     }
 }

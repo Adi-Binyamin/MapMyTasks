@@ -1,5 +1,6 @@
 package com.example.mapmytasks
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,6 +13,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val taskId = intent.getStringExtra("TASK_ID") ?: return
         val userId = intent.getStringExtra("USER_ID") ?: return
+
+        // סגירת ההתראה מיד כשלוחצים על אחד הכפתורים
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(taskId.hashCode())
 
         when (intent.action) {
             "MARK_DONE" -> {
