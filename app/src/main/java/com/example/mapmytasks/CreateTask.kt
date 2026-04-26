@@ -17,9 +17,6 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -91,27 +88,19 @@ class CreateTask : AppCompatActivity() {
     }
 
     private fun loadPartners() {
-        val myEmail = Firebase.auth.currentUser?.email ?: return
+        val myEmail = TaskManager.getCurrentUserEmail() ?: return
         val partnersList = mutableListOf("My Tasks")
 
-        FirebaseFirestore.getInstance().collection("permissions")
-            .whereEqualTo("allowedEditorEmail", myEmail)
-            .get()
-            .addOnSuccessListener { result ->
-                for (doc in result) {
-                    val ownerEmail = doc.getString("ownerEmail") ?: continue
-                    if (!partnersList.contains(ownerEmail)) {
-                        partnersList.add(ownerEmail)
-                    }
-                }
-                val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, partnersList)
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                assignToSpinner.adapter = adapter
-            }
-            .addOnFailureListener { toast("Error loading partners") }
+        TaskManager.getPartners(myEmail, onSuccess = { partners ->
+            partnersList.addAll(partners)
+            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, partnersList)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            assignToSpinner.adapter = adapter
+        }, onFailure = {
+            toast("Error loading partners")
+        })
     }
 
-    // קטע קוד מתוך CreateTask.kt המעודכן
     private fun setupSaveButton() {
         saveTaskBtn.setOnClickListener {
             val taskName = taskNameInput.text.toString().trim()
@@ -119,11 +108,9 @@ class CreateTask : AppCompatActivity() {
             if (selectedDateTime.isEmpty()) { toast("Please choose date"); return@setOnClickListener }
 
             val selectedOption = assignToSpinner.selectedItem?.toString() ?: "My Tasks"
-            val myUid = Firebase.auth.currentUser?.uid ?: return@setOnClickListener
-            val myEmail = Firebase.auth.currentUser?.email ?: "Unknown"
+            val myUid = TaskManager.getCurrentUserId() ?: return@setOnClickListener
+            val myEmail = TaskManager.getCurrentUserEmail() ?: "Unknown"
 
-            // קביעת מי הנמען של המשימה
-            // אם בחרתי "My Tasks", הנמען הוא אני. אחרת, הנמען הוא המייל של השותף מה-Spinner.
             val targetAssignTo = if (selectedOption == "My Tasks") myEmail else selectedOption
 
             val task = Task(
@@ -134,44 +121,38 @@ class CreateTask : AppCompatActivity() {
                 latitude = selectedLat,
                 longitude = selectedLng,
                 createdBy = myEmail,
-                assignTo = targetAssignTo // השדה החדש שהוספת!
+                assignTo = targetAssignTo
             )
 
             if (selectedOption == "My Tasks") {
                 saveToFirestore(myUid, task, "My Tasks")
             } else {
                 val partnerEmail = selectedOption.lowercase()
-                FirebaseFirestore.getInstance().collection("users")
-                    .whereEqualTo("email", partnerEmail)
-                    .get()
-                    .addOnSuccessListener { documents ->
-                        if (!documents.isEmpty) {
-                            val partnerUid = documents.documents[0].id
-                            saveToFirestore(partnerUid, task, partnerEmail)
-                        } else {
-                            toast("Partner not found in system")
-                        }
+                TaskManager.getUserIdByEmail(partnerEmail, onSuccess = { partnerUid ->
+                    if (partnerUid != null) {
+                        saveToFirestore(partnerUid, task, partnerEmail)
+                    } else {
+                        toast("Partner not found in system")
                     }
+                }, onFailure = {
+                    toast("Error finding partner")
+                })
             }
         }
     }
 
     private fun saveToFirestore(targetUid: String, task: Task, targetName: String) {
-        FirebaseFirestore.getInstance().collection("users")
-            .document(targetUid)
-            .collection("tasks")
-            .add(task)
-            .addOnSuccessListener { doc ->
-                doc.update("id", doc.id)
-                toast("Task saved and sent to $targetName")
-                scheduleSmartWeatherCheck(task)
-                finish()
-            }
-            .addOnFailureListener { e -> toast("Error: ${e.message}") }
+        TaskManager.addTask(targetUid, task, onSuccess = { updatedTask ->
+            toast("Task saved and sent to $targetName")
+            scheduleSmartWeatherCheck(updatedTask)
+            finish()
+        }, onFailure = { e ->
+            toast("Error: ${e.message}")
+        })
     }
 
     private fun checkProductivityWarning(category: String, dateTime: String) {
-        val user = Firebase.auth.currentUser ?: return
+        val userId = TaskManager.getCurrentUserId() ?: return
         val hour = try { dateTime.split(" ")[1].split(":")[0].toInt() } catch (e: Exception) { return }
 
         val timeIndex = when (hour) {
@@ -181,32 +162,12 @@ class CreateTask : AppCompatActivity() {
             else -> 3
         }
 
-        FirebaseFirestore.getInstance().collection("users")
-            .document(user.uid).collection("tasks")
-            .whereEqualTo("category", category)
-            .get()
-            .addOnSuccessListener { result ->
-                var total = 0
-                var done = 0
-                for (doc in result) {
-                    val taskDateTime = doc.getString("dateTime") ?: continue
-                    val taskHour = try { taskDateTime.split(" ")[1].split(":")[0].toInt() } catch(e:Exception) { 0 }
-                    val taskIndex = when (taskHour) {
-                        in 6..11 -> 0
-                        in 12..17 -> 1
-                        in 18..21 -> 2
-                        else -> 3
-                    }
-                    if (taskIndex == timeIndex) {
-                        total++
-                        if (doc.getString("status") == "DONE") done++
-                    }
-                }
-                if (total >= 3 && (done.toFloat() / total) < 0.5) {
-                    val timeNames = listOf("בבוקר", "בצהריים", "בערב", "בלילה")
-                    toast("⚠️ שים לב: בדרך כלל את נוטה לא לסיים משימות $category ${timeNames[timeIndex]}. אולי כדאי לשנות שעה?")
-                }
+        TaskManager.getProductivityStats(userId, category, timeIndex) { total, done ->
+            if (total >= 3 && (done.toFloat() / total) < 0.5) {
+                val timeNames = listOf("בבוקר", "בצהריים", "בערב", "בלילה")
+                toast("⚠️ שים לב: בדרך כלל את נוטה לא לסיים משימות $category ${timeNames[timeIndex]}. אולי כדאי לשנות שעה?")
             }
+        }
     }
 
     private fun setupDateTimePicker() {

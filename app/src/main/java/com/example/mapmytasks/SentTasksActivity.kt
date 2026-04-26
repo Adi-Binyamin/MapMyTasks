@@ -1,13 +1,10 @@
 package com.example.mapmytasks
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.ListenerRegistration
 
 class SentTasksActivity : AppCompatActivity() {
 
@@ -20,6 +17,8 @@ class SentTasksActivity : AppCompatActivity() {
 
     private val partnersList = mutableListOf<String>()
     private lateinit var partnersAdapter: ArrayAdapter<String>
+
+    private var sentTasksListener: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,82 +36,64 @@ class SentTasksActivity : AppCompatActivity() {
 
         btnBack.setOnClickListener { finish() }
 
-        val myEmail = Firebase.auth.currentUser?.email
+        val myEmail = TaskManager.getCurrentUserEmail()
         if (myEmail != null) {
-            loadPartnersFromPermissions(myEmail)
+            loadPartners(myEmail)
         }
 
         spinnerPartners.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedPartner = partnersList[position]
                 if (myEmail != null && selectedPartner != "בחר שותף מרשימת ההרשאות...") {
-                    fetchTasksForPartner(myEmail, selectedPartner)
+                    startListeningToTasks(myEmail, selectedPartner)
                 }
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
     }
 
-    private fun loadPartnersFromPermissions(myEmail: String) {
-        // חיפוש באוסף permissions לפי השדה שראינו בתמונה שלך
-        Firebase.firestore.collection("permissions")
-            .whereEqualTo("allowedEditorEmail", myEmail)
-            .get()
-            .addOnSuccessListener { documents ->
-                partnersList.clear()
-                partnersList.add("בחר שותף מרשימת ההרשאות...")
-
-                for (doc in documents) {
-                    val partnerEmail = doc.getString("ownerEmail")
-                    if (partnerEmail != null) {
-                        partnersList.add(partnerEmail)
-                    }
-                }
-                partnersAdapter.notifyDataSetChanged()
-            }
-            .addOnFailureListener { e ->
-                Log.e("CHECK_TASKS", "Error loading partners: ${e.message}")
-            }
+    private fun loadPartners(myEmail: String) {
+        TaskManager.getPartners(myEmail, onSuccess = { partners ->
+            partnersList.clear()
+            partnersList.add("בחר שותף מרשימת ההרשאות...")
+            partnersList.addAll(partners)
+            partnersAdapter.notifyDataSetChanged()
+        }, onFailure = {
+            toast("Error loading partners")
+        })
     }
 
-    private fun fetchTasksForPartner(myEmail: String, partnerEmail: String) {
-        Firebase.firestore.collectionGroup("tasks")
-            .whereEqualTo("createdBy", myEmail)
-            .whereEqualTo("assignTo", partnerEmail)
-            .addSnapshotListener { value, error ->
-                if (error != null) {
-                    Log.e("CHECK_TASKS", "שגיאה בשליפת נתונים: ${error.message}")
-                    return@addSnapshotListener
-                }
+    private fun startListeningToTasks(myEmail: String, partnerEmail: String) {
+        // ניקוי מאזין קודם אם קיים
+        sentTasksListener?.remove()
 
-                tasksList.clear()
-
-                if (value == null || value.isEmpty) {
-                    tasksList.add("לא נמצאו משימות ששלחת ל-$partnerEmail")
-                } else {
-                    for (doc in value) {
-                        // שליפת כל הפרטים מהמסמך ב-Firestore
-                        val name = doc.getString("name") ?: "ללא שם"
-                        val status = doc.getString("status") ?: "PENDING"
-                        val category = doc.getString("category") ?: "כללי"
-                        val dateTime = doc.getString("dateTime") ?: "לא נקבע זמן"
-                        val location = doc.getString("location") ?: "לא נקבע מיקום"
-
-                        val icon = if (status == "DONE") "✅" else "⏳"
-
-                        // יצירת טקסט עשיר שמציג את כל המידע
-                        val taskDetails = """
-                        $icon משימה: $name
-                        📁 קטגוריה: $category
-                        📅 זמן: $dateTime
-                        📍 מיקום: $location
-                        📊 סטטוס: $status
+        sentTasksListener = TaskManager.listenToSentTasksForPartner(myEmail, partnerEmail) { tasks ->
+            tasksList.clear()
+            if (tasks.isEmpty()) {
+                tasksList.add("לא נמצאו משימות ששלחת ל-$partnerEmail")
+            } else {
+                for (task in tasks) {
+                    val icon = if (task.status == TaskStatus.DONE) "✅" else "⏳"
+                    val taskDetails = """
+                        $icon משימה: ${task.name}
+                        📁 קטגוריה: ${task.category}
+                        📅 זמן: ${task.dateTime}
+                        📍 מיקום: ${task.location}
+                        📊 סטטוס: ${task.status}
                     """.trimIndent()
-
-                        tasksList.add(taskDetails)
-                    }
+                    tasksList.add(taskDetails)
                 }
-                tasksAdapter.notifyDataSetChanged()
             }
+            tasksAdapter.notifyDataSetChanged()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        sentTasksListener?.remove()
+    }
+
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }

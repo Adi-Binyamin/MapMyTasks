@@ -8,7 +8,6 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
 
 class TasksAdapter(
     private var tasks: List<Task>,
@@ -21,11 +20,10 @@ class TasksAdapter(
         val dateHeader: TextView = view.findViewById(R.id.dateHeader)
         val divider: View = view.findViewById(R.id.innerDivider)
 
-        // שדות התוכן
         val timeOnlyText: TextView = view.findViewById(R.id.taskTimeOnly)
         val nameText: TextView = view.findViewById(R.id.taskName)
         val locationText: TextView = view.findViewById(R.id.taskLocation)
-        val createdByText: TextView = view.findViewById(R.id.taskCreatedBy) // השדה שביקשת להחזיר
+        val createdByText: TextView = view.findViewById(R.id.taskCreatedBy)
         val editBtn: ImageButton = view.findViewById(R.id.editTaskBtn)
     }
 
@@ -41,8 +39,7 @@ class TasksAdapter(
         val prevTask = if (position > 0) tasks[position - 1] else null
         val nextTask = if (position < tasks.size - 1) tasks[position + 1] else null
 
-        // --- טיפול בזמן ותאריך ---
-        // מחלקים את "dd/MM/yyyy HH:mm" לשני חלקים
+        // טיפול בזמן ותאריך
         val dateTimeParts = task.dateTime.split(" ")
         val currentDate = dateTimeParts.getOrNull(0) ?: ""
         val currentTime = dateTimeParts.getOrNull(1) ?: "--:--"
@@ -50,7 +47,7 @@ class TasksAdapter(
         val prevDate = prevTask?.dateTime?.split(" ")?.getOrNull(0)
         val nextDate = nextTask?.dateTime?.split(" ")?.getOrNull(0)
 
-        // --- ניהול צבעי המטריצה (לפי ימים) ---
+        // ניהול צבעי המטריצה
         val darkPastels = listOf("#AED6F1", "#A9DFBF", "#F5B7B1", "#D7BDE2", "#F9E79F")
         val lightPastels = listOf("#D1EAFF", "#D1F2EB", "#FADBD8", "#E8DAEF", "#FCF3CF")
 
@@ -58,7 +55,7 @@ class TasksAdapter(
         holder.container.setBackgroundColor(Color.parseColor(darkPastels[idx]))
         holder.cardView.setBackgroundColor(Color.parseColor(lightPastels[idx]))
 
-        // --- הצגת כותרת תאריך רק בשינוי יום ---
+        // הצגת כותרת תאריך
         if (currentDate != prevDate) {
             holder.dateHeader.text = currentDate
             holder.dateHeader.visibility = View.VISIBLE
@@ -66,7 +63,7 @@ class TasksAdapter(
             holder.dateHeader.visibility = View.GONE
         }
 
-        // רווחים בין ימים
+        // רווחים
         val layoutParams = holder.container.layoutParams as ViewGroup.MarginLayoutParams
         if (currentDate != nextDate) {
             layoutParams.bottomMargin = 32
@@ -77,13 +74,12 @@ class TasksAdapter(
         }
         holder.container.layoutParams = layoutParams
 
-        // --- מילוי נתונים ב-UI ---
         holder.timeOnlyText.text = currentTime
         holder.nameText.text = task.name
         holder.locationText.text = task.location
 
-        // --- לוגיקת "נוצר על ידי" (המייל של השותף) ---
-        val myEmail = FirebaseAuth.getInstance().currentUser?.email
+        // שימוש ב-TaskManager במקום FirebaseAuth ישירות
+        val myEmail = TaskManager.getCurrentUserEmail()
         if (!task.createdBy.isNullOrEmpty() && task.createdBy != myEmail) {
             holder.createdByText.text = "From: ${task.createdBy}"
             holder.createdByText.visibility = View.VISIBLE
@@ -91,7 +87,6 @@ class TasksAdapter(
             holder.createdByText.visibility = View.GONE
         }
 
-        // כפתור עריכה
         holder.editBtn.setOnClickListener { onEditClick(task) }
     }
 

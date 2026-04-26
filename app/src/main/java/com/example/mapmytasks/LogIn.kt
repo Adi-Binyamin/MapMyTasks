@@ -3,24 +3,18 @@ package com.example.mapmytasks
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.mapmytasks.databinding.ActivityLogInBinding
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 
 class LogIn : AppCompatActivity() {
 
     private lateinit var binding: ActivityLogInBinding
-    private lateinit var auth: FirebaseAuth
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLogInBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        auth = FirebaseAuth.getInstance()
 
         binding.registerButton.setOnClickListener {
             registerUser()
@@ -40,33 +34,14 @@ class LogIn : AppCompatActivity() {
             return
         }
 
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val userId = auth.currentUser?.uid ?: return@addOnCompleteListener
-
-                    // שמירת נתוני המשתמש ב-Firestore כדי שנוכל לחפש אותו לפי אימייל
-                    val userMap = hashMapOf(
-                        "email" to email,
-                        "uid" to userId
-                    )
-
-                    FirebaseFirestore.getInstance().collection("users")
-                        .document(userId)
-                        .set(userMap)
-                        .addOnSuccessListener {
-                            Log.d("LOGIN_DEBUG", "User data saved to Firestore")
-                            navigateToMain()
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("LOGIN_DEBUG", "Failed to save user data: ${e.message}")
-                            // ננווט בכל זאת כדי לא לתקוע את המשתמש
-                            navigateToMain()
-                        }
-                } else {
-                    Toast.makeText(this, "Registration failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
-                }
+        TaskManager.registerUser(email, password,
+            onSuccess = {
+                navigateToMain()
+            },
+            onFailure = { e ->
+                Toast.makeText(this, "Registration failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
+        )
     }
 
     private fun loginUser() {
@@ -78,14 +53,14 @@ class LogIn : AppCompatActivity() {
             return
         }
 
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    navigateToMain()
-                } else {
-                    Toast.makeText(this, "Login failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
-                }
+        TaskManager.loginUser(email, password,
+            onSuccess = {
+                navigateToMain()
+            },
+            onFailure = { e ->
+                Toast.makeText(this, "Login failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
+        )
     }
 
     private fun navigateToMain() {

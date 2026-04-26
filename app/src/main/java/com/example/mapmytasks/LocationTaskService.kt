@@ -17,8 +17,6 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.*
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 
 class LocationTaskService : Service() {
@@ -27,13 +25,11 @@ class LocationTaskService : Service() {
     private lateinit var locationCallback: LocationCallback
     private val notifiedTasks = mutableSetOf<String>()
 
-    // חדש: משתנים לשמירת מיקום אחרון וטיימר עצמאי שלא תלוי בתזוזת המכשיר
     private var lastLat: Double = 0.0
     private var lastLng: Double = 0.0
     private val handler = Handler(Looper.getMainLooper())
     private val timeCheckRunnable = object : Runnable {
         override fun run() {
-            // מריץ בדיקת משימות כל 10 שניות על בסיס המיקום האחרון הידוע
             if (lastLat != 0.0 && lastLng != 0.0) {
                 checkTasks(lastLat, lastLng)
             }
@@ -73,7 +69,6 @@ class LocationTaskService : Service() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation ?: return
-                // שומרים את המיקום האחרון בכל פעם שה-GPS מספק אותו
                 lastLat = location.latitude
                 lastLng = location.longitude
                 checkTasks(lastLat, lastLng)
@@ -81,8 +76,6 @@ class LocationTaskService : Service() {
         }
 
         startLocationUpdates()
-
-        // הפעלת הטיימר העצמאי
         handler.post(timeCheckRunnable)
     }
 
@@ -115,16 +108,13 @@ class LocationTaskService : Service() {
     }
 
     private fun checkTasks(lat: Double, lng: Double) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val db = FirebaseFirestore.getInstance()
-        val tasksRef = db.collection("users").document(userId).collection("tasks")
+        val userId = TaskManager.getCurrentUserId() ?: return
 
-        tasksRef.get().addOnSuccessListener { tasks ->
+        TaskManager.getTasksForUser(userId, onSuccess = { tasks ->
             val now = Calendar.getInstance()
 
-            for (doc in tasks) {
-                val task = doc.toObject(Task::class.java)
-                val taskId = doc.id
+            for (task in tasks) {
+                val taskId = task.id
 
                 if (task.status != TaskStatus.PENDING) continue
                 if (task.dateTime.isEmpty()) continue
@@ -140,13 +130,13 @@ class LocationTaskService : Service() {
 
                 val diff = now.timeInMillis - taskCal.timeInMillis
 
-                // 1. עברה יותר מדקה - הפוך ל-MISSED
                 if (diff >= 60000) {
-                    updateTaskStatusInFirebase(userId, taskId, TaskStatus.MISSED)
+                    TaskManager.updateTaskStatus(userId, taskId, TaskStatus.MISSED) {
+                        Log.d(TAG, "Task $taskId marked as MISSED automatically")
+                    }
                     continue
                 }
 
-                // 2. אנחנו בדיוק באותה הדקה (חלון של 60 שניות בלבד)
                 val isSameMinute = diff in 0..59999
 
                 if (isSameMinute) {
@@ -165,18 +155,9 @@ class LocationTaskService : Service() {
                     }
                 }
             }
-        }.addOnFailureListener {
-            Log.e(TAG, "Error getting tasks: ${it.message}")
-        }
-    }
-
-    private fun updateTaskStatusInFirebase(userId: String, taskId: String, status: TaskStatus) {
-        FirebaseFirestore.getInstance().collection("users")
-            .document(userId).collection("tasks").document(taskId)
-            .update("status", status.name)
-            .addOnSuccessListener {
-                Log.d(TAG, "Task $taskId marked as ${status.name} automatically")
-            }
+        }, onFailure = { e ->
+            Log.e(TAG, "Error getting tasks: ${e.message}")
+        })
     }
 
     private fun showNotification(taskName: String, taskId: String, userId: String) {
@@ -225,7 +206,6 @@ class LocationTaskService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)
-        // חשוב: עוצרים את הטיימר כשהשירות נסגר
         handler.removeCallbacks(timeCheckRunnable)
     }
 }

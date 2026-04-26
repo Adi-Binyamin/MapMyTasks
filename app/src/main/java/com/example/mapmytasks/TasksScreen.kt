@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -14,8 +13,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
 
 class TasksScreen : AppCompatActivity() {
@@ -50,8 +47,7 @@ class TasksScreen : AppCompatActivity() {
         tasksAdapter = TasksAdapter(tasksList) { task ->
             val intent = Intent(this, EditTask::class.java)
             intent.putExtra("TASK_ID", task.id)
-            val myUid = FirebaseAuth.getInstance().currentUser?.uid
-            intent.putExtra("OWNER_ID", myUid)
+            intent.putExtra("OWNER_ID", TaskManager.getCurrentUserId())
             editTaskLauncher.launch(intent)
         }
 
@@ -72,64 +68,54 @@ class TasksScreen : AppCompatActivity() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         sortSpinner.adapter = adapter
 
-        sortSpinner.setOnItemSelectedListener(object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                when (position) {
-                    0 -> fetchTasks(sortBy = "date")
-                    1 -> fetchTasks(sortBy = "category")
-                }
+        sortSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
+                fetchTasks(sortBy = if (position == 0) "date" else "category")
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
-        })
+        }
     }
 
     private fun fetchTasks(sortBy: String = "date") {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val db = FirebaseFirestore.getInstance()
+        val userId = TaskManager.getCurrentUserId() ?: return
 
-        db.collection("users").document(userId).collection("tasks")
-            .get()
-            .addOnSuccessListener { documents ->
-                tasksList.clear()
-                val now = Calendar.getInstance()
+        TaskManager.getTasksForUser(userId, onSuccess = { fetchedTasks ->
+            tasksList.clear()
+            val now = Calendar.getInstance()
 
-                for (doc in documents) {
-                    val task = doc.toObject(Task::class.java)?.copy(id = doc.id) ?: continue
-                    val taskCal = parseTaskDateTime(task.dateTime)
-                    task.isActive = taskCal?.after(now) ?: true
+            for (task in fetchedTasks) {
+                val taskCal = parseTaskDateTime(task.dateTime)
+                task.isActive = taskCal?.after(now) ?: true
 
-                    if (task.isActive) {
-                        tasksList.add(task)
-                    }
+                if (task.isActive) {
+                    tasksList.add(task)
                 }
+            }
 
-                // --- שלב המיון (קריטי למטריצה) ---
+            // מיון לפי תאריך/קטגוריה
+            if (sortBy == "date") {
                 tasksList.sortWith(compareBy({ parseTaskDateTime(it.dateTime)?.time }))
+            } else {
+                tasksList.sortBy { it.category }
+            }
 
-                // --- שלב הצביעה הציקלית (פותר את הבעיה שהכל כחול) ---
-                var dayGroupIndex = -1
-                var lastDateString = ""
+            // חישוב צבעים ציקליים לפי ימים
+            var dayGroupIndex = -1
+            var lastDateString = ""
 
-                for (task in tasksList) {
-                    val dateOnly = task.dateTime.split(" ")[0] // מחלץ למשל "24/03/2026"
-
-                    if (dateOnly != lastDateString) {
-                        // אם הגענו לתאריך חדש ברשימה הממוינת, מעלים את האינדקס
-                        dayGroupIndex++
-                        lastDateString = dateOnly
-                    }
-
-                    // קובע למשימה אינדקס צבע (0 עד 4) שיישאר קבוע לכל המשימות באותו יום
-                    task.colorIndex = dayGroupIndex % 5
+            for (task in tasksList) {
+                val dateOnly = task.dateTime.split(" ")[0]
+                if (dateOnly != lastDateString) {
+                    dayGroupIndex++
+                    lastDateString = dateOnly
                 }
+                task.colorIndex = dayGroupIndex % 5
+            }
 
-                // עדכון האדפטר עם הרשימה ה"צבועה"
-                tasksAdapter.notifyDataSetChanged()
-            }
-            .addOnFailureListener { exception ->
-                Log.e("TasksScreen", "Error fetching tasks", exception)
-                toast("Failed to load tasks")
-            }
+            tasksAdapter.notifyDataSetChanged()
+        }, onFailure = {
+            toast("Failed to load tasks")
+        })
     }
 
     private fun parseTaskDateTime(dateTime: String): Calendar? {
@@ -141,9 +127,7 @@ class TasksScreen : AppCompatActivity() {
                     parts[3].toInt(), parts[4].toInt(), 0)
                 set(Calendar.MILLISECOND, 0)
             }
-        } catch (e: Exception) {
-            null
-        }
+        } catch (e: Exception) { null }
     }
 
     private fun toast(msg: String) {

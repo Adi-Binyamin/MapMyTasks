@@ -4,8 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,8 +60,8 @@ class MainActivity : AppCompatActivity() {
 
         // התנתקות מהמערכת
         btnLogout.setOnClickListener {
-            // 1. ניתוק המשתמש מ-Firebase
-            Firebase.auth.signOut()
+            // 1. ניתוק המשתמש מ-Firebase דרך ה-TaskManager
+            TaskManager.logoutUser()
 
             // 2. מעבר למסך ההתחברות (LogIn)
             val intent = Intent(this, LogIn::class.java)

@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.google.firebase.auth.FirebaseAuth
 
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
 
@@ -21,9 +20,8 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         val taskName = intent.getStringExtra("TASK_NAME") ?: "Task Nearby"
         val taskId = intent.getStringExtra("TASK_ID") ?: return
 
-        // במקום להסתמך על USER_ID מה-Intent, אנחנו לוקחים את המשתמש המחובר כרגע.
-        // זה מבטיח שהעדכון של "בוצע" יקרה בבסיס הנתונים הנכון.
-        val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        // שימוש ב-TaskManager המרכזי במקום פנייה ישירה ל-Firebase
+        val currentUserId = TaskManager.getCurrentUserId() ?: return
 
         showNotification(context, taskName, taskId, currentUserId)
     }
