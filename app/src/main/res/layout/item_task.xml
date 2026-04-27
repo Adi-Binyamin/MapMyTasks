@@ -26,19 +26,45 @@
         android:padding="16dp"
         android:gravity="center_vertical">
 
-        <TextView
-            android:id="@+id/taskTimeOnly"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="@android:color/black"
-            android:minWidth="60dp"
-            android:text="10:00" />
+            android:orientation="vertical"
+            android:gravity="center"
+            android:minWidth="70dp">
+
+            <TextView
+                android:id="@+id/taskTimeOnly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="@android:color/black"
+                android:text="10:00" />
+
+            <TextView
+                android:id="@+id/taskDateOnly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="#555555"
+                android:layout_marginTop="2dp"
+                android:text="01/01/2026" />
+
+            <TextView
+                android:id="@+id/taskCategoryText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#0066cc"
+                android:layout_marginTop="2dp"
+                android:text="Work" />
+        </LinearLayout>
 
         <View
             android:layout_width="1dp"
-            android:layout_height="30dp"
+            android:layout_height="40dp"
             android:background="#33000000"
             android:layout_marginHorizontal="12dp" />
 
@@ -63,6 +89,7 @@
                 android:textSize="13sp"
                 android:textColor="#666666" />
         </LinearLayout>
+
         <TextView
             android:id="@+id/taskCreatedBy"
             android:layout_width="wrap_content"
@@ -78,7 +105,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:src="@android:drawable/ic_menu_edit"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@android:color/transparent"
             android:contentDescription="Edit" />
     </LinearLayout>
 

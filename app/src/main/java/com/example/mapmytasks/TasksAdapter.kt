@@ -14,7 +14,6 @@ class TasksAdapter(
     private val onEditClick: (Task) -> Unit
 ) : RecyclerView.Adapter<TasksAdapter.TaskViewHolder>() {
 
-    // שינינו את השם כדי למנוע התנגשות עם הפונקציה של קוטלין!
     var currentSortMethod: String = "date"
 
     class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -23,7 +22,11 @@ class TasksAdapter(
         val dateHeader: TextView = view.findViewById(R.id.dateHeader)
         val divider: View = view.findViewById(R.id.innerDivider)
 
+        // האלמנטים של התצוגה בצד שמאל
         val timeOnlyText: TextView = view.findViewById(R.id.taskTimeOnly)
+        val dateOnlyText: TextView = view.findViewById(R.id.taskDateOnly)
+        val categoryText: TextView = view.findViewById(R.id.taskCategoryText)
+
         val nameText: TextView = view.findViewById(R.id.taskName)
         val locationText: TextView = view.findViewById(R.id.taskLocation)
         val createdByText: TextView = view.findViewById(R.id.taskCreatedBy)
@@ -42,7 +45,6 @@ class TasksAdapter(
         val prevTask = if (position > 0) tasks[position - 1] else null
         val nextTask = if (position < tasks.size - 1) tasks[position + 1] else null
 
-        // שימוש בשם החדש - currentSortMethod
         val currentGroupKey = if (currentSortMethod == "date") task.dateTime.split(" ").getOrNull(0) ?: "" else task.category
 
         val prevGroupKey = if (prevTask != null) {
@@ -53,7 +55,6 @@ class TasksAdapter(
             if (currentSortMethod == "date") nextTask.dateTime.split(" ").getOrNull(0) ?: "" else nextTask.category
         } else null
 
-        // ניהול צבעי המטריצה
         val darkPastels = listOf("#AED6F1", "#A9DFBF", "#F5B7B1", "#D7BDE2", "#F9E79F")
         val lightPastels = listOf("#D1EAFF", "#D1F2EB", "#FADBD8", "#E8DAEF", "#FCF3CF")
 
@@ -61,7 +62,6 @@ class TasksAdapter(
         holder.container.setBackgroundColor(Color.parseColor(darkPastels[idx]))
         holder.cardView.setBackgroundColor(Color.parseColor(lightPastels[idx]))
 
-        // הצגת הכותרת הנכונה (Header)
         if (currentGroupKey != prevGroupKey) {
             holder.dateHeader.text = currentGroupKey
             holder.dateHeader.visibility = View.VISIBLE
@@ -69,7 +69,6 @@ class TasksAdapter(
             holder.dateHeader.visibility = View.GONE
         }
 
-        // ניהול המרווחים
         val layoutParams = holder.container.layoutParams as ViewGroup.MarginLayoutParams
         if (currentGroupKey != nextGroupKey) {
             layoutParams.bottomMargin = 32
@@ -80,13 +79,18 @@ class TasksAdapter(
         }
         holder.container.layoutParams = layoutParams
 
-        // הצגת נתוני המשימה
-        val currentTime = task.dateTime.split(" ").getOrNull(1) ?: "--:--"
+        // חילוץ והצגת נתוני השעה והתאריך בנפרד
+        val dateParts = task.dateTime.split(" ")
+        val currentDate = dateParts.getOrNull(0) ?: ""
+        val currentTime = dateParts.getOrNull(1) ?: "--:--"
+
         holder.timeOnlyText.text = currentTime
+        holder.dateOnlyText.text = currentDate
+        holder.categoryText.text = task.category // מציג תמיד את הקטגוריה
+
         holder.nameText.text = task.name
         holder.locationText.text = task.location
 
-        // שימוש ב-TaskManager
         val myEmail = TaskManager.getCurrentUserEmail()
         if (!task.createdBy.isNullOrEmpty() && task.createdBy != myEmail) {
             holder.createdByText.text = "From: ${task.createdBy}"
