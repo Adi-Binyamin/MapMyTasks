@@ -18,10 +18,8 @@ class WeeklySummary : AppCompatActivity() {
     private lateinit var chartPendingCategory: BarChart
 
     private val timeSlots = listOf("Morning", "Afternoon", "Evening", "Night")
-    private val categories = listOf(
-        "Work", "Study", "Personal", "Shopping", "Health",
-        "Finance", "Hobby", "Travel", "School", "Chores", "Other"
-    )
+
+    // מחיקת הרשימה הכפולה - מעכשיו נשתמש ב-AppUtils.CATEGORIES!
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,17 +38,19 @@ class WeeklySummary : AppCompatActivity() {
     private fun fetchData() {
         val userId = TaskManager.getCurrentUserId() ?: return
 
-        TaskManager.getWeeklySummaryStats(userId, categories) { doneS, pendingS, doneC, pendingC, weekDates ->
+        // שימוש ברשימה המרכזית שלנו מ-AppUtils
+        TaskManager.getWeeklySummaryStats(userId, AppUtils.CATEGORIES) { doneS, pendingS, doneC, pendingC, weekDates ->
             val weekLabel = "${weekDates.first()} - ${weekDates.last()}"
 
             setupBarChart(chartDoneTimeSlots, doneS.toList(), timeSlots, "Done Tasks ($weekLabel)", android.R.color.holo_green_light)
             setupBarChart(chartPendingTimeSlots, pendingS.toList(), timeSlots, "Pending Tasks ($weekLabel)", android.R.color.holo_red_light)
 
-            val doneValues = categories.map { doneC[it] ?: 0f }
-            val pendingValues = categories.map { pendingC[it] ?: 0f }
+            // מיפוי לפי הרשימה המרכזית
+            val doneValues = AppUtils.CATEGORIES.map { doneC[it] ?: 0f }
+            val pendingValues = AppUtils.CATEGORIES.map { pendingC[it] ?: 0f }
 
-            setupBarChart(chartDoneCategory, doneValues, categories, "Done by Category", android.R.color.holo_green_light)
-            setupBarChart(chartPendingCategory, pendingValues, categories, "Pending by Category", android.R.color.holo_red_light)
+            setupBarChart(chartDoneCategory, doneValues, AppUtils.CATEGORIES, "Done by Category", android.R.color.holo_green_light)
+            setupBarChart(chartPendingCategory, pendingValues, AppUtils.CATEGORIES, "Pending by Category", android.R.color.holo_red_light)
         }
     }
 

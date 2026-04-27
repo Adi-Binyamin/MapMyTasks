@@ -7,11 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 
 class Productivity : AppCompatActivity() {
 
-    private val categories = listOf(
-        "Work", "Study", "Personal", "Shopping", "Health",
-        "Finance", "Hobby", "Travel", "School", "Chores", "Other"
-    )
-
     private lateinit var spinner: Spinner
     private lateinit var progressMorning: ProgressBar
     private lateinit var progressAfternoon: ProgressBar
@@ -43,7 +38,8 @@ class Productivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
+        // שימוש ברשימה המרכזית מ-AppUtils!
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, AppUtils.CATEGORIES)
         spinner.adapter = adapter
 
         fetchData()
@@ -52,16 +48,16 @@ class Productivity : AppCompatActivity() {
     private fun fetchData() {
         val userId = TaskManager.getCurrentUserId() ?: return
 
-        TaskManager.getAllProductivityStats(userId, categories) { dMap, tMap ->
+        TaskManager.getAllProductivityStats(userId, AppUtils.CATEGORIES) { dMap, tMap ->
             doneMap = dMap
             totalMap = tMap
 
             // עדכון ראשוני
-            updateProgressBars(categories[0])
+            updateProgressBars(AppUtils.CATEGORIES[0])
 
             spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                    updateProgressBars(categories[pos])
+                    updateProgressBars(AppUtils.CATEGORIES[pos])
                 }
                 override fun onNothingSelected(p: AdapterView<*>?) {}
             }

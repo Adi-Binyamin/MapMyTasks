@@ -157,11 +157,7 @@ object TaskManager {
             .addOnFailureListener { onFailure?.invoke(it) }
     }
 
-    fun markTaskDone(userId: String, taskId: String) = updateTaskStatus(userId, taskId, TaskStatus.DONE)
-    fun markTaskMissed(userId: String, taskId: String) = updateTaskStatus(userId, taskId, TaskStatus.MISSED)
-
     // --- פעולות סטטיסטיקה ---
-
     fun getAllProductivityStats(userId: String, categories: List<String>, onSuccess: (doneMap: Map<String, FloatArray>, totalMap: Map<String, IntArray>) -> Unit) {
         val doneMap = mutableMapOf<String, FloatArray>()
         val totalMap = mutableMapOf<String, IntArray>()
