@@ -19,8 +19,17 @@ class MainActivity : AppCompatActivity() {
         val productivityBtn: Button = findViewById(R.id.productivityBtn)
         val btnLogout: Button = findViewById(R.id.btnLogout)
 
-        // הכפתור החדש של המשחק
+        // הכפתור של המשחק
         val gameBtn: Button = findViewById(R.id.gameBtn)
+
+        // הכפתור החדש של הצ'אטבוט
+        val chatBtn: Button = findViewById(R.id.chatBtn)
+
+        // מעבר למסך הצ'אט החדש
+        chatBtn.setOnClickListener {
+            val intent = Intent(this, ChatActivity::class.java)
+            startActivity(intent)
+        }
 
         // מעבר למסך יצירת משימה
         createTaskBtn.setOnClickListener {

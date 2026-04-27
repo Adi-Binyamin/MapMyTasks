@@ -30,7 +30,9 @@ android {
 
     packaging {
         resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
             excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/INDEX.LIST"
         }
     }
 
@@ -99,5 +101,9 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+    // שים לב לעדכון הגרסה ל-0.10.0
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+
 
 }
