@@ -14,6 +14,9 @@ class TasksAdapter(
     private val onEditClick: (Task) -> Unit
 ) : RecyclerView.Adapter<TasksAdapter.TaskViewHolder>() {
 
+    // שינינו את השם כדי למנוע התנגשות עם הפונקציה של קוטלין!
+    var currentSortMethod: String = "date"
+
     class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val container: LinearLayout = view.findViewById(R.id.taskItemContainer)
         val cardView: LinearLayout = view.findViewById(R.id.taskCardView)
@@ -39,13 +42,16 @@ class TasksAdapter(
         val prevTask = if (position > 0) tasks[position - 1] else null
         val nextTask = if (position < tasks.size - 1) tasks[position + 1] else null
 
-        // טיפול בזמן ותאריך
-        val dateTimeParts = task.dateTime.split(" ")
-        val currentDate = dateTimeParts.getOrNull(0) ?: ""
-        val currentTime = dateTimeParts.getOrNull(1) ?: "--:--"
+        // שימוש בשם החדש - currentSortMethod
+        val currentGroupKey = if (currentSortMethod == "date") task.dateTime.split(" ").getOrNull(0) ?: "" else task.category
 
-        val prevDate = prevTask?.dateTime?.split(" ")?.getOrNull(0)
-        val nextDate = nextTask?.dateTime?.split(" ")?.getOrNull(0)
+        val prevGroupKey = if (prevTask != null) {
+            if (currentSortMethod == "date") prevTask.dateTime.split(" ").getOrNull(0) ?: "" else prevTask.category
+        } else null
+
+        val nextGroupKey = if (nextTask != null) {
+            if (currentSortMethod == "date") nextTask.dateTime.split(" ").getOrNull(0) ?: "" else nextTask.category
+        } else null
 
         // ניהול צבעי המטריצה
         val darkPastels = listOf("#AED6F1", "#A9DFBF", "#F5B7B1", "#D7BDE2", "#F9E79F")
@@ -55,17 +61,17 @@ class TasksAdapter(
         holder.container.setBackgroundColor(Color.parseColor(darkPastels[idx]))
         holder.cardView.setBackgroundColor(Color.parseColor(lightPastels[idx]))
 
-        // הצגת כותרת תאריך
-        if (currentDate != prevDate) {
-            holder.dateHeader.text = currentDate
+        // הצגת הכותרת הנכונה (Header)
+        if (currentGroupKey != prevGroupKey) {
+            holder.dateHeader.text = currentGroupKey
             holder.dateHeader.visibility = View.VISIBLE
         } else {
             holder.dateHeader.visibility = View.GONE
         }
 
-        // רווחים
+        // ניהול המרווחים
         val layoutParams = holder.container.layoutParams as ViewGroup.MarginLayoutParams
-        if (currentDate != nextDate) {
+        if (currentGroupKey != nextGroupKey) {
             layoutParams.bottomMargin = 32
             holder.divider.visibility = View.GONE
         } else {
@@ -74,11 +80,13 @@ class TasksAdapter(
         }
         holder.container.layoutParams = layoutParams
 
+        // הצגת נתוני המשימה
+        val currentTime = task.dateTime.split(" ").getOrNull(1) ?: "--:--"
         holder.timeOnlyText.text = currentTime
         holder.nameText.text = task.name
         holder.locationText.text = task.location
 
-        // שימוש ב-TaskManager במקום FirebaseAuth ישירות
+        // שימוש ב-TaskManager
         val myEmail = TaskManager.getCurrentUserEmail()
         if (!task.createdBy.isNullOrEmpty() && task.createdBy != myEmail) {
             holder.createdByText.text = "From: ${task.createdBy}"

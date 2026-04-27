@@ -3,12 +3,11 @@ package com.example.mapmytasks
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,11 +21,14 @@ class TasksScreen : AppCompatActivity() {
     private val tasksList = mutableListOf<Task>()
     private lateinit var tasksAdapter: TasksAdapter
 
+    // שומרים את מצב המיון הנוכחי
+    private var currentSortBy: String = "date"
+
     private val editTaskLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            fetchTasks()
+            fetchTasks(currentSortBy)
         }
     }
 
@@ -55,7 +57,6 @@ class TasksScreen : AppCompatActivity() {
         tasksRecyclerView.adapter = tasksAdapter
 
         setupSortSpinner()
-        fetchTasks()
 
         findViewById<Button>(R.id.backBtn).setOnClickListener {
             finish()
@@ -69,14 +70,15 @@ class TasksScreen : AppCompatActivity() {
         sortSpinner.adapter = adapter
 
         sortSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>, view: android.view.View?, position: Int, id: Long) {
-                fetchTasks(sortBy = if (position == 0) "date" else "category")
+            override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                currentSortBy = if (position == 0) "date" else "category"
+                fetchTasks(sortBy = currentSortBy)
             }
             override fun onNothingSelected(parent: AdapterView<*>) {}
         }
     }
 
-    private fun fetchTasks(sortBy: String = "date") {
+    private fun fetchTasks(sortBy: String = currentSortBy) {
         val userId = TaskManager.getCurrentUserId() ?: return
 
         TaskManager.getTasksForUser(userId, onSuccess = { fetchedTasks ->
@@ -84,7 +86,7 @@ class TasksScreen : AppCompatActivity() {
             val now = Calendar.getInstance()
 
             for (task in fetchedTasks) {
-                val taskCal = parseTaskDateTime(task.dateTime)
+                val taskCal = DateTimeUtils.parseDateTime(task.dateTime)
                 task.isActive = taskCal?.after(now) ?: true
 
                 if (task.isActive) {
@@ -92,45 +94,32 @@ class TasksScreen : AppCompatActivity() {
                 }
             }
 
-            // מיון לפי תאריך/קטגוריה
+            // העדכון החשוב! השתמשנו בשם המשתנה החדש של האדפטר:
+            tasksAdapter.currentSortMethod = sortBy
+
+            // ביצוע המיון בפועל - משתמשים ב-sortWith כמו קודם
             if (sortBy == "date") {
-                tasksList.sortWith(compareBy({ parseTaskDateTime(it.dateTime)?.time }))
+                tasksList.sortWith(compareBy { DateTimeUtils.parseDateTime(it.dateTime)?.time })
             } else {
-                tasksList.sortBy { it.category }
+                tasksList.sortWith(compareBy({ it.category.lowercase() }, { DateTimeUtils.parseDateTime(it.dateTime)?.time }))
             }
 
-            // חישוב צבעים ציקליים לפי ימים
-            var dayGroupIndex = -1
-            var lastDateString = ""
+            // חישוב צבעים ציקליים לפי הקבוצה
+            var groupIndex = -1
+            var lastGroupKey = ""
 
             for (task in tasksList) {
-                val dateOnly = task.dateTime.split(" ")[0]
-                if (dateOnly != lastDateString) {
-                    dayGroupIndex++
-                    lastDateString = dateOnly
+                val currentGroupKey = if (sortBy == "date") task.dateTime.split(" ")[0] else task.category
+                if (currentGroupKey != lastGroupKey) {
+                    groupIndex++
+                    lastGroupKey = currentGroupKey
                 }
-                task.colorIndex = dayGroupIndex % 5
+                task.colorIndex = groupIndex % 5
             }
 
             tasksAdapter.notifyDataSetChanged()
         }, onFailure = {
             toast("Failed to load tasks")
         })
-    }
-
-    private fun parseTaskDateTime(dateTime: String): Calendar? {
-        return try {
-            val parts = dateTime.split(" ", "/", ":")
-            if (parts.size < 5) return null
-            Calendar.getInstance().apply {
-                set(parts[2].toInt(), parts[1].toInt() - 1, parts[0].toInt(),
-                    parts[3].toInt(), parts[4].toInt(), 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-        } catch (e: Exception) { null }
-    }
-
-    private fun toast(msg: String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }
