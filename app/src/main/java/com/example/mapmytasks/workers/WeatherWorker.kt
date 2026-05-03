@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.workers
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -10,6 +10,7 @@ import androidx.work.WorkerParameters
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.example.mapmytasks.models.Task
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject

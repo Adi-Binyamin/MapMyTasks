@@ -1,10 +1,19 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.WorkManager
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
+import com.example.mapmytasks.workers.WeatherWorker
+import com.example.mapmytasks.models.Task
+import com.example.mapmytasks.models.TaskStatus
+import com.example.mapmytasks.utilities.AppUtils
+import com.example.mapmytasks.utilities.DateTimeUtils
+import com.example.mapmytasks.utilities.toast
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
@@ -111,9 +120,10 @@ class EditTask : AppCompatActivity() {
 
                 val creator = if (task.createdBy.isNotEmpty()) task.createdBy else "You"
                 createdByTv.text = "Created by: $creator"
-                createdByTv.visibility = android.view.View.VISIBLE
+                createdByTv.visibility = View.VISIBLE
 
-                val spinnerPosition = (categorySpinner.adapter as ArrayAdapter<String>).getPosition(task.category)
+                val spinnerPosition =
+                    (categorySpinner.adapter as ArrayAdapter<String>).getPosition(task.category)
                 categorySpinner.setSelection(spinnerPosition)
             }
         }, onFailure = { e ->

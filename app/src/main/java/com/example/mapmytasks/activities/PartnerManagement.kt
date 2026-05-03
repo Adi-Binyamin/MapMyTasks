@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.os.Bundle
 import android.widget.ArrayAdapter
@@ -8,6 +8,8 @@ import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import android.content.Intent
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
 import com.google.firebase.firestore.ListenerRegistration
 
 class PartnerManagement : AppCompatActivity() {
@@ -38,7 +40,8 @@ class PartnerManagement : AppCompatActivity() {
             if (friendEmail.isEmpty()) { toast("Please enter an email"); return@setOnClickListener }
             if (friendEmail == TaskManager.getCurrentUserEmail()) { toast("You cannot grant permission to yourself"); return@setOnClickListener }
 
-            TaskManager.addPermission(friendEmail,
+            TaskManager.addPermission(
+                friendEmail,
                 onSuccess = {
                     // Translated to English
                     toast("Success! $friendEmail added to the list")
@@ -64,7 +67,8 @@ class PartnerManagement : AppCompatActivity() {
             val docId = permissionDocIds[position]
             val email = partnerEmails[position]
 
-            TaskManager.deletePermission(docId,
+            TaskManager.deletePermission(
+                docId,
                 onSuccess = { toast("Permission for $email removed") }, // Translated
                 onFailure = { toast("Error during deletion") } // Translated
             )

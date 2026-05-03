@@ -1,9 +1,12 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
+import com.example.mapmytasks.utilities.AppUtils
 
 class Productivity : AppCompatActivity() {
 
@@ -59,6 +62,7 @@ class Productivity : AppCompatActivity() {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                     updateProgressBars(AppUtils.CATEGORIES[pos])
                 }
+
                 override fun onNothingSelected(p: AdapterView<*>?) {}
             }
         }

@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.app.Application
 import com.google.firebase.appcheck.FirebaseAppCheck

@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.os.Bundle
 import android.os.Handler
@@ -10,6 +10,7 @@ import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mapmytasks.R
 
 class BalloonGameActivity : AppCompatActivity() {
 

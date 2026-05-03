@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.data
 
 import android.Manifest
 import android.app.Notification
@@ -16,6 +16,8 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import com.example.mapmytasks.models.TaskStatus
+import com.example.mapmytasks.receivers.NotificationActionReceiver
 import com.google.android.gms.location.*
 import java.util.*
 

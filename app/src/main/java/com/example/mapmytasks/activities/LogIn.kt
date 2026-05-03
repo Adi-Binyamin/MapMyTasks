@@ -1,10 +1,12 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mapmytasks.data.LocationTaskService
+import com.example.mapmytasks.data.TaskManager
 import com.example.mapmytasks.databinding.ActivityLogInBinding
 
 class LogIn : AppCompatActivity() {
@@ -34,7 +36,8 @@ class LogIn : AppCompatActivity() {
             return
         }
 
-        TaskManager.registerUser(email, password,
+        TaskManager.registerUser(
+            email, password,
             onSuccess = {
                 navigateToMain()
             },
@@ -53,7 +56,8 @@ class LogIn : AppCompatActivity() {
             return
         }
 
-        TaskManager.loginUser(email, password,
+        TaskManager.loginUser(
+            email, password,
             onSuccess = {
                 navigateToMain()
             },

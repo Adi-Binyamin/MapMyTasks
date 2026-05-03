@@ -1,6 +1,8 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.data
 
 import android.util.Log
+import com.example.mapmytasks.models.Task
+import com.example.mapmytasks.models.TaskStatus
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration

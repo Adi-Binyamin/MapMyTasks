@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.content.Intent
 import android.os.Build
@@ -12,6 +12,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mapmytasks.data.LocationTaskService
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
+import com.example.mapmytasks.adapters.TasksAdapter
+import com.example.mapmytasks.models.Task
+import com.example.mapmytasks.utilities.DateTimeUtils
+import com.example.mapmytasks.utilities.toast
 import java.util.Calendar
 
 class TasksScreen : AppCompatActivity() {
@@ -101,7 +108,11 @@ class TasksScreen : AppCompatActivity() {
             if (sortBy == "date") {
                 tasksList.sortWith(compareBy { DateTimeUtils.parseDateTime(it.dateTime)?.time })
             } else {
-                tasksList.sortWith(compareBy({ it.category.lowercase() }, { DateTimeUtils.parseDateTime(it.dateTime)?.time }))
+                tasksList.sortWith(
+                    compareBy(
+                        { it.category.lowercase() },
+                        { DateTimeUtils.parseDateTime(it.dateTime)?.time })
+                )
             }
 
             // חישוב צבעים ציקליים לפי הקבוצה
@@ -109,7 +120,8 @@ class TasksScreen : AppCompatActivity() {
             var lastGroupKey = ""
 
             for (task in tasksList) {
-                val currentGroupKey = if (sortBy == "date") task.dateTime.split(" ")[0] else task.category
+                val currentGroupKey =
+                    if (sortBy == "date") task.dateTime.split(" ")[0] else task.category
                 if (currentGroupKey != lastGroupKey) {
                     groupIndex++
                     lastGroupKey = currentGroupKey

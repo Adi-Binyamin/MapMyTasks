@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.adapters
 
 import android.graphics.Color
 import android.view.LayoutInflater
@@ -8,6 +8,9 @@ import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
+import com.example.mapmytasks.models.Task
 
 class TasksAdapter(
     private var tasks: List<Task>,

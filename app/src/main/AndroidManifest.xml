@@ -17,7 +17,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".MyApp"
+        android:name=".activities.MyApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -27,11 +27,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MapMyTasks"
         >
-        <activity android:name=".ChatActivity" />
+        <activity android:name=".activities.ChatActivity" />
 
         <!-- מסך לוגאין – מסך פתיחה -->
         <activity
-            android:name=".LogIn"
+            android:name=".activities.LogIn"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -40,29 +40,29 @@
         </activity>
 
         <!-- מסכי האפליקציה -->
-        <activity android:name=".Productivity" android:exported="false" />
-        <activity android:name=".WeeklySummary" android:exported="false" />
-        <activity android:name=".TasksScreen" android:exported="false" />
-        <activity android:name=".EditTask" android:exported="false" />
-        <activity android:name=".CreateTask" android:exported="false" />
-        <activity android:name=".PartnerManagement" android:exported="false" />
-        <activity android:name=".SentTasksActivity" android:exported="false" />
-        <activity android:name=".BalloonGameActivity" android:exported="false" />
+        <activity android:name=".activities.Productivity" android:exported="false" />
+        <activity android:name=".activities.WeeklySummary" android:exported="false" />
+        <activity android:name=".activities.TasksScreen" android:exported="false" />
+        <activity android:name=".activities.EditTask" android:exported="false" />
+        <activity android:name=".activities.CreateTask" android:exported="false" />
+        <activity android:name=".activities.PartnerManagement" android:exported="false" />
+        <activity android:name=".activities.SentTasksActivity" android:exported="false" />
+        <activity android:name=".activities.BalloonGameActivity" android:exported="false" />
 
 
         <!-- MainActivity חייב להיות exported=true בשביל Intent -->
         <activity
-            android:name=".MainActivity"
+            android:name=".activities.MainActivity"
             android:exported="true" />
 
         <!-- שירות מיקום קדמי -->
         <service
-            android:name=".LocationTaskService"
+            android:name=".data.LocationTaskService"
             android:foregroundServiceType="location"
             android:exported="false" />
 
         <!-- ריסיברים להתראות ולגאופנס -->
-        <receiver android:name=".NotificationActionReceiver" />
+        <receiver android:name=".receivers.NotificationActionReceiver" />
 
 
 

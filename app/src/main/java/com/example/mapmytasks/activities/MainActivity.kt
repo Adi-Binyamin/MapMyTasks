@@ -1,9 +1,11 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.Button
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
 
 class MainActivity : AppCompatActivity() {
 

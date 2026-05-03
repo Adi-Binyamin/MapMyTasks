@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -9,6 +9,9 @@ import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import android.widget.Button
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
+import com.example.mapmytasks.utilities.AppUtils
 
 class WeeklySummary : AppCompatActivity() {
 
@@ -39,18 +42,45 @@ class WeeklySummary : AppCompatActivity() {
         val userId = TaskManager.getCurrentUserId() ?: return
 
         // שימוש ברשימה המרכזית שלנו מ-AppUtils
-        TaskManager.getWeeklySummaryStats(userId, AppUtils.CATEGORIES) { doneS, pendingS, doneC, pendingC, weekDates ->
+        TaskManager.getWeeklySummaryStats(
+            userId,
+            AppUtils.CATEGORIES
+        ) { doneS, pendingS, doneC, pendingC, weekDates ->
             val weekLabel = "${weekDates.first()} - ${weekDates.last()}"
 
-            setupBarChart(chartDoneTimeSlots, doneS.toList(), timeSlots, "Done Tasks ($weekLabel)", android.R.color.holo_green_light)
-            setupBarChart(chartPendingTimeSlots, pendingS.toList(), timeSlots, "Pending Tasks ($weekLabel)", android.R.color.holo_red_light)
+            setupBarChart(
+                chartDoneTimeSlots,
+                doneS.toList(),
+                timeSlots,
+                "Done Tasks ($weekLabel)",
+                android.R.color.holo_green_light
+            )
+            setupBarChart(
+                chartPendingTimeSlots,
+                pendingS.toList(),
+                timeSlots,
+                "Pending Tasks ($weekLabel)",
+                android.R.color.holo_red_light
+            )
 
             // מיפוי לפי הרשימה המרכזית
             val doneValues = AppUtils.CATEGORIES.map { doneC[it] ?: 0f }
             val pendingValues = AppUtils.CATEGORIES.map { pendingC[it] ?: 0f }
 
-            setupBarChart(chartDoneCategory, doneValues, AppUtils.CATEGORIES, "Done by Category", android.R.color.holo_green_light)
-            setupBarChart(chartPendingCategory, pendingValues, AppUtils.CATEGORIES, "Pending by Category", android.R.color.holo_red_light)
+            setupBarChart(
+                chartDoneCategory,
+                doneValues,
+                AppUtils.CATEGORIES,
+                "Done by Category",
+                android.R.color.holo_green_light
+            )
+            setupBarChart(
+                chartPendingCategory,
+                pendingValues,
+                AppUtils.CATEGORIES,
+                "Pending by Category",
+                android.R.color.holo_red_light
+            )
         }
     }
 

@@ -1,10 +1,12 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.receivers
 
 import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import com.example.mapmytasks.data.TaskManager
+import com.example.mapmytasks.models.TaskStatus
 
 class NotificationActionReceiver : BroadcastReceiver() {
 

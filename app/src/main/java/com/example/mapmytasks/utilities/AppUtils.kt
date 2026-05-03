@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.utilities
 
 import android.content.Context
 import android.os.Handler
@@ -6,6 +6,7 @@ import android.os.Looper
 import android.widget.ArrayAdapter
 import android.widget.Spinner
 import android.widget.Toast
+import com.example.mapmytasks.data.TaskManager
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -39,7 +40,8 @@ object AppUtils {
         TaskManager.getProductivityStats(userId, category, timeIndex) { total, done ->
             if (total >= 3 && (done.toFloat() / total) < 0.5) {
                 // תורגם לאנגלית
-                val timeNames = listOf("in the morning", "in the afternoon", "in the evening", "at night")
+                val timeNames =
+                    listOf("in the morning", "in the afternoon", "in the evening", "at night")
                 context.toast("⚠️ Heads up: You usually don't finish $category tasks ${timeNames[timeIndex]}. Consider changing the time?")
             }
         }

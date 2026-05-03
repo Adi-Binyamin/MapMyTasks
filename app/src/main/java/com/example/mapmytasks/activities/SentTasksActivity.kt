@@ -1,10 +1,12 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import android.content.Intent
+import com.example.mapmytasks.R
+import com.example.mapmytasks.data.TaskManager
+import com.example.mapmytasks.models.TaskStatus
 import com.google.firebase.firestore.ListenerRegistration
 
 class SentTasksActivity : AppCompatActivity() {
@@ -70,27 +72,28 @@ class SentTasksActivity : AppCompatActivity() {
         // Clean up previous listener if exists
         sentTasksListener?.remove()
 
-        sentTasksListener = TaskManager.listenToSentTasksForPartner(myEmail, partnerEmail) { tasks ->
-            tasksList.clear()
-            if (tasks.isEmpty()) {
-                // Translated empty state
-                tasksList.add("No tasks found sent to $partnerEmail")
-            } else {
-                for (task in tasks) {
-                    val icon = if (task.status == TaskStatus.DONE) "✅" else "⏳"
-                    // Translated task details layout
-                    val taskDetails = """
+        sentTasksListener =
+            TaskManager.listenToSentTasksForPartner(myEmail, partnerEmail) { tasks ->
+                tasksList.clear()
+                if (tasks.isEmpty()) {
+                    // Translated empty state
+                    tasksList.add("No tasks found sent to $partnerEmail")
+                } else {
+                    for (task in tasks) {
+                        val icon = if (task.status == TaskStatus.DONE) "✅" else "⏳"
+                        // Translated task details layout
+                        val taskDetails = """
                         $icon Task: ${task.name}
                         📁 Category: ${task.category}
                         📅 Time: ${task.dateTime}
                         📍 Location: ${task.location}
                         📊 Status: ${task.status}
                     """.trimIndent()
-                    tasksList.add(taskDetails)
+                        tasksList.add(taskDetails)
+                    }
                 }
+                tasksAdapter.notifyDataSetChanged()
             }
-            tasksAdapter.notifyDataSetChanged()
-        }
     }
 
     override fun onDestroy() {

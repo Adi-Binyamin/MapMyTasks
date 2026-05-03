@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.models
 
 data class Task(
     val id: String = "",

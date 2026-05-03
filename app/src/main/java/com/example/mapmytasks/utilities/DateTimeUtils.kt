@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.utilities
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog

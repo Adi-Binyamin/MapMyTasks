@@ -1,10 +1,11 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.adapters
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mapmytasks.R
 
 
 // מודל הנתונים: טקסט ההודעה, והאם היא נשלחה על ידי המשתמש (true) או הבוט (false)
