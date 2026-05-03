@@ -88,14 +88,25 @@ class CreateTask : AppCompatActivity() {
 
     private fun setupSaveButton() {
         saveTaskBtn.setOnClickListener {
+            // 1. איסוף הנתונים מהשדות
             val taskName = taskNameInput.text.toString().trim()
-            if (taskName.isEmpty()) { toast("Please enter task name"); return@setOnClickListener }
-            if (selectedDateTime.isEmpty()) { toast("Please choose date"); return@setOnClickListener }
-
             val selectedOption = assignToSpinner.selectedItem?.toString() ?: "My Tasks"
-            val myUid = TaskManager.getCurrentUserId() ?: return@setOnClickListener
-            val myEmail = TaskManager.getCurrentUserEmail() ?: "Unknown"
 
+            // 2. בדיקת תקינות מקיפה (ולידציה)
+            // בדקנו: שם, תאריך, תיאור המיקום, וקואורדינטות (לוודא שבאמת נבחר מיקום מהרשימה)
+            if (taskName.isEmpty() || selectedDateTime.isEmpty() || selectedLocation.isEmpty() || selectedLat == 0.0) {
+                toast("יש למלא את כל הפרטים, כולל בחירת מיקום מהרשימה")
+                return@setOnClickListener // עוצר כאן ולא ממשיך לשמירה
+            }
+
+            // 3. מניעת לחיצות כפולות - נעילת הכפתור
+            saveTaskBtn.isEnabled = false
+
+            val myUid = TaskManager.getCurrentUserId() ?: run {
+                saveTaskBtn.isEnabled = true
+                return@setOnClickListener
+            }
+            val myEmail = TaskManager.getCurrentUserEmail() ?: "Unknown"
             val targetAssignTo = if (selectedOption == "My Tasks") myEmail else selectedOption
 
             val task = Task(
@@ -109,18 +120,23 @@ class CreateTask : AppCompatActivity() {
                 assignTo = targetAssignTo
             )
 
+            // 4. תהליך השמירה
             if (selectedOption == "My Tasks") {
                 saveToFirestore(myUid, task, "My Tasks")
+                // הערה: בתוך saveToFirestore, אם הכל מצליח, אתה בטח סוגר את המסך (finish)
+                // אם יש שם שגיאה, כדאי להוסיף שם saveTaskBtn.isEnabled = true
             } else {
                 val partnerEmail = selectedOption.lowercase()
                 TaskManager.getUserIdByEmail(partnerEmail, onSuccess = { partnerUid ->
                     if (partnerUid != null) {
                         saveToFirestore(partnerUid, task, partnerEmail)
                     } else {
-                        toast("Partner not found in system")
+                        toast("השותף לא נמצא במערכת")
+                        saveTaskBtn.isEnabled = true // משחררים את הכפתור לתיקון
                     }
                 }, onFailure = {
-                    toast("Error finding partner")
+                    toast("שגיאה בחיפוש השותף")
+                    saveTaskBtn.isEnabled = true // משחררים את הכפתור לניסיון חוזר
                 })
             }
         }

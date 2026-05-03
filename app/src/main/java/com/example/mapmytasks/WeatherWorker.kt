@@ -83,9 +83,9 @@ class WeatherWorker(
     private fun sendNotification(taskName: String, isRain: Boolean, maxTemp: Double) {
         val channelId = "weather_alerts"
         val message = when {
-            isRain && maxTemp >= 30 -> "מחר צפוי גשם וחום (${maxTemp.toInt()}°)"
-            isRain -> "מחר צפוי גשם"
-            else -> "מחר חם מאוד (${maxTemp.toInt()}°)"
+            isRain && maxTemp >= 30 -> "Attention: Rain is expected and it's expected to be hot during your task (${maxTemp.toInt()}°)"
+            isRain -> "Attention: Rain is expected"
+            else -> "Attention: It's expected to be hot during your task (${maxTemp.toInt()}°)"
         }
 
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

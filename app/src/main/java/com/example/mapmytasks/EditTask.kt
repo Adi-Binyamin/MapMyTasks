@@ -123,7 +123,15 @@ class EditTask : AppCompatActivity() {
 
     private fun saveTaskChanges() {
         if (taskOwnerId.isEmpty()) return
+
         val taskName = taskNameEdit.text.toString().trim()
+
+        if (taskName.isEmpty() || selectedDateTime.isEmpty() || selectedLocation.isEmpty() || selectedLat == 0.0) {
+            toast("יש למלא את כל הפרטים לפני השמירה")
+            return
+        }
+
+        saveTaskBtn.isEnabled = false
 
         val updatedTask = Task(
             id = taskId,
@@ -145,6 +153,7 @@ class EditTask : AppCompatActivity() {
             finish()
         }, onFailure = { e ->
             toast("Failed to update task")
+            saveTaskBtn.isEnabled = true
         })
     }
 
