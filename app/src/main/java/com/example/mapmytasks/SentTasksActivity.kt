@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
 import com.google.firebase.firestore.ListenerRegistration
 
 class SentTasksActivity : AppCompatActivity() {
@@ -44,7 +45,8 @@ class SentTasksActivity : AppCompatActivity() {
         spinnerPartners.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedPartner = partnersList[position]
-                if (myEmail != null && selectedPartner != "בחר שותף מרשימת ההרשאות...") {
+                // Match the English default text
+                if (myEmail != null && selectedPartner != "Select partner from permissions list...") {
                     startListeningToTasks(myEmail, selectedPartner)
                 }
             }
@@ -55,7 +57,8 @@ class SentTasksActivity : AppCompatActivity() {
     private fun loadPartners(myEmail: String) {
         TaskManager.getPartners(myEmail, onSuccess = { partners ->
             partnersList.clear()
-            partnersList.add("בחר שותף מרשימת ההרשאות...")
+            // Translated default option
+            partnersList.add("Select partner from permissions list...")
             partnersList.addAll(partners)
             partnersAdapter.notifyDataSetChanged()
         }, onFailure = {
@@ -64,22 +67,24 @@ class SentTasksActivity : AppCompatActivity() {
     }
 
     private fun startListeningToTasks(myEmail: String, partnerEmail: String) {
-        // ניקוי מאזין קודם אם קיים
+        // Clean up previous listener if exists
         sentTasksListener?.remove()
 
         sentTasksListener = TaskManager.listenToSentTasksForPartner(myEmail, partnerEmail) { tasks ->
             tasksList.clear()
             if (tasks.isEmpty()) {
-                tasksList.add("לא נמצאו משימות ששלחת ל-$partnerEmail")
+                // Translated empty state
+                tasksList.add("No tasks found sent to $partnerEmail")
             } else {
                 for (task in tasks) {
                     val icon = if (task.status == TaskStatus.DONE) "✅" else "⏳"
+                    // Translated task details layout
                     val taskDetails = """
-                        $icon משימה: ${task.name}
-                        📁 קטגוריה: ${task.category}
-                        📅 זמן: ${task.dateTime}
-                        📍 מיקום: ${task.location}
-                        📊 סטטוס: ${task.status}
+                        $icon Task: ${task.name}
+                        📁 Category: ${task.category}
+                        📅 Time: ${task.dateTime}
+                        📍 Location: ${task.location}
+                        📊 Status: ${task.status}
                     """.trimIndent()
                     tasksList.add(taskDetails)
                 }

@@ -34,12 +34,14 @@ class PartnerManagement : AppCompatActivity() {
 
         grantBtn.setOnClickListener {
             val friendEmail = emailInput.text.toString().trim().lowercase()
-            if (friendEmail.isEmpty()) { toast("אנא הזן אימייל"); return@setOnClickListener }
-            if (friendEmail == TaskManager.getCurrentUserEmail()) { toast("אינך יכול לתת הרשאה לעצמך"); return@setOnClickListener }
+            // Translated to English
+            if (friendEmail.isEmpty()) { toast("Please enter an email"); return@setOnClickListener }
+            if (friendEmail == TaskManager.getCurrentUserEmail()) { toast("You cannot grant permission to yourself"); return@setOnClickListener }
 
             TaskManager.addPermission(friendEmail,
                 onSuccess = {
-                    toast("הצלחה! $friendEmail נוסף לרשימה")
+                    // Translated to English
+                    toast("Success! $friendEmail added to the list")
                     emailInput.text.clear()
                 },
                 onFailure = { errorMsg ->
@@ -63,8 +65,8 @@ class PartnerManagement : AppCompatActivity() {
             val email = partnerEmails[position]
 
             TaskManager.deletePermission(docId,
-                onSuccess = { toast("ההרשאה עבור $email הוסרה") },
-                onFailure = { toast("שגיאה במחיקה") }
+                onSuccess = { toast("Permission for $email removed") }, // Translated
+                onFailure = { toast("Error during deletion") } // Translated
             )
             true
         }
@@ -82,7 +84,7 @@ class PartnerManagement : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        listenerRegistration?.remove() // ניקוי המאזין כשהמסך נסגר
+        listenerRegistration?.remove() // Cleaning up the listener when the screen is closed
     }
 
     private fun toast(msg: String) {

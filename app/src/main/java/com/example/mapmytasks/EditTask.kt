@@ -127,7 +127,8 @@ class EditTask : AppCompatActivity() {
         val taskName = taskNameEdit.text.toString().trim()
 
         if (taskName.isEmpty() || selectedDateTime.isEmpty() || selectedLocation.isEmpty() || selectedLat == 0.0) {
-            toast("יש למלא את כל הפרטים לפני השמירה")
+            // תורגם לאנגלית
+            toast("Please fill in all details before saving")
             return
         }
 
@@ -148,7 +149,8 @@ class EditTask : AppCompatActivity() {
 
         TaskManager.updateTask(taskOwnerId, taskId, updatedTask, onSuccess = {
             toast("Task updated successfully")
-            AppUtils.scheduleSmartWeatherCheck(this, updatedTask)
+            // הנה התיקון החשוב שלנו! עכשיו משתמשים במחלקה החדשה והאפור נעלם.
+            WeatherWorker.scheduleWeatherWorker(this, updatedTask)
             setResult(RESULT_OK)
             finish()
         }, onFailure = { e ->

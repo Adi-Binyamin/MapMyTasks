@@ -13,7 +13,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         val taskId = intent.getStringExtra("TASK_ID") ?: return
         val userId = intent.getStringExtra("USER_ID") ?: return
 
-        // סגירת ההתראה מיד כשלוחצים על אחד הכפתורים
+        // Close the notification immediately when a button is clicked
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(taskId.hashCode())
 
@@ -21,20 +21,20 @@ class NotificationActionReceiver : BroadcastReceiver() {
             "MARK_DONE" -> {
                 TaskManager.updateTaskStatus(userId, taskId, TaskStatus.DONE,
                     onSuccess = {
-                        Toast.makeText(context, "משימה בוצעה ✅", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Task completed ✅", Toast.LENGTH_SHORT).show()
                     },
                     onFailure = { e ->
-                        Toast.makeText(context, "שגיאה בעדכון: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Update error: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 )
             }
             "DISMISS" -> {
                 TaskManager.updateTaskStatus(userId, taskId, TaskStatus.MISSED,
                     onSuccess = {
-                        Toast.makeText(context, "משימה נדחתה ❌", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Task dismissed ❌", Toast.LENGTH_SHORT).show()
                     },
                     onFailure = { e ->
-                        Toast.makeText(context, "שגיאה בעדכון: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Update error: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 )
             }

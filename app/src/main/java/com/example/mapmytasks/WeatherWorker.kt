@@ -25,7 +25,8 @@ class WeatherWorker(
     override suspend fun doWork(): Result {
         val lat = inputData.getDouble("lat", 0.0)
         val lon = inputData.getDouble("lon", 0.0)
-        val taskName = inputData.getString("taskName") ?: "משימה"
+        // שונה ל-Task
+        val taskName = inputData.getString("taskName") ?: "Task"
         val taskDateTime = inputData.getString("taskDateTime") ?: ""
 
         if (lat == 0.0 || lon == 0.0 || taskDateTime.isEmpty()) return Result.success()
@@ -92,13 +93,15 @@ class WeatherWorker(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
-                NotificationChannel(channelId, "התראות מזג אוויר", NotificationManager.IMPORTANCE_HIGH)
+                // שונה ל-Weather Alerts
+                NotificationChannel(channelId, "Weather Alerts", NotificationManager.IMPORTANCE_HIGH)
             )
         }
 
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("התראת מזג אוויר – $taskName")
+            // שונה ל-Weather Alert
+            .setContentTitle("Weather Alert - $taskName")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

@@ -95,7 +95,8 @@ class CreateTask : AppCompatActivity() {
             // 2. בדיקת תקינות מקיפה (ולידציה)
             // בדקנו: שם, תאריך, תיאור המיקום, וקואורדינטות (לוודא שבאמת נבחר מיקום מהרשימה)
             if (taskName.isEmpty() || selectedDateTime.isEmpty() || selectedLocation.isEmpty() || selectedLat == 0.0) {
-                toast("יש למלא את כל הפרטים, כולל בחירת מיקום מהרשימה")
+                // תורגם לאנגלית
+                toast("Please fill in all details, including selecting a location from the list")
                 return@setOnClickListener // עוצר כאן ולא ממשיך לשמירה
             }
 
@@ -131,11 +132,13 @@ class CreateTask : AppCompatActivity() {
                     if (partnerUid != null) {
                         saveToFirestore(partnerUid, task, partnerEmail)
                     } else {
-                        toast("השותף לא נמצא במערכת")
+                        // תורגם לאנגלית
+                        toast("Partner not found in the system")
                         saveTaskBtn.isEnabled = true // משחררים את הכפתור לתיקון
                     }
                 }, onFailure = {
-                    toast("שגיאה בחיפוש השותף")
+                    // תורגם לאנגלית
+                    toast("Error searching for partner")
                     saveTaskBtn.isEnabled = true // משחררים את הכפתור לניסיון חוזר
                 })
             }
@@ -145,10 +148,12 @@ class CreateTask : AppCompatActivity() {
     private fun saveToFirestore(targetUid: String, task: Task, targetName: String) {
         TaskManager.addTask(targetUid, task, onSuccess = { updatedTask ->
             toast("Task saved and sent to $targetName")
-            AppUtils.scheduleSmartWeatherCheck(this, updatedTask)
+            // הנה התיקון שלנו! משתמשים במחלקה החדשה במקום בפונקציה שנמחקה מ-AppUtils
+            WeatherWorker.scheduleWeatherWorker(this, updatedTask)
             finish()
         }, onFailure = { e ->
             toast("Error: ${e.message}")
+            saveTaskBtn.isEnabled = true // חשוב: אם השמירה ל-Firestore נכשלה, נשחרר את הכפתור כדי שהמשתמש יוכל לנסות שוב
         })
     }
 
