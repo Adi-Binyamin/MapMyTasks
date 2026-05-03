@@ -1,4 +1,4 @@
-package com.example.mapmytasks
+package com.example.mapmytasks.activities
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -11,6 +11,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.mapmytasks.adapters.ChatAdapter
+import com.example.mapmytasks.adapters.ChatMessage
+import com.example.mapmytasks.R
 import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import kotlinx.coroutines.Dispatchers
@@ -31,8 +34,8 @@ class ChatActivity : AppCompatActivity() {
 
     private val TAG = "GEMINI_TRACE"
 
-    // המפתח המעודכן שלך מה-AI Studio
-    private val geminiApiKey = "AIzaSyBR0DalSIZd2UuLXDktU8dv8vc0PJVBzCQ"
+    // APIkey is private
+    private val geminiApiKey = ""
 
     // הגדרת המודל - שימוש בגרסה 2.0
     private val generativeModel = GenerativeModel(
@@ -40,16 +43,16 @@ class ChatActivity : AppCompatActivity() {
         apiKey = geminiApiKey,
         systemInstruction = content {
             text("""
-                אתה העוזר הווירטואלי של אפליקציית MapMyTasks.
+                You are the virtual assistant for the MapMyTasks app.
                 
-                מבט-על על האפליקציה:
-                MapMyTasks היא מערכת חכמה לניהול משימות וזמן. היא מאפשרת למשתמשים ליצור משימות, להצמיד אותן למיקומים גיאוגרפיים (כדי לקבל התראה כשהם מתקרבים למקום), לסנכרן את הלו"ז מול יומן גוגל (Google Calendar), ולראות את ההתקדמות שלהם דרך מסך סטטיסטיקות וגרפים.
+                App Overview:
+                MapMyTasks is a smart task and time management system. It allows users to create tasks, pin them to geographical locations (to get an alert when they approach the place), sync the schedule with Google Calendar, and view their progress through a statistics and graphs screen.
                 
-                התפקיד שלך:
-                לענות על שאלות של משתמשים, לעזור להם לארגן את המשימות שלהם, לייעץ על ניהול זמן, ולהסביר להם איך להשתמש באפליקציה אם הם מסתבכים.
+                Your Role:
+                Answer user questions, help them organize their tasks, advise on time management, and explain how to use the app if they get stuck.
                 
-                סגנון:
-                ענה בעברית טבעית, ברורה וידידותית. שמור על תשובות קצרות ונוחות לקריאה במסך נייד (מומלץ להשתמש באימוג'י ונקודות כשצריך).
+                Style:
+                Answer in natural, clear, and friendly English. Keep answers short and easy to read on a mobile screen (feel free to use emojis and bullet points when needed).
             """.trimIndent())        }
     )
 
@@ -77,7 +80,8 @@ class ChatActivity : AppCompatActivity() {
 
         if (messagesList.isEmpty()) {
             Log.d(TAG, "מציג הודעת פתיחה דיפולטיבית")
-            addMessageToChat(ChatMessage("היי! אני העוזר של MapMyTasks. איך אוכל לעזור?", false))
+            // תורגם לאנגלית
+            addMessageToChat(ChatMessage("Hi! I'm the MapMyTasks assistant. How can I help you?", false))
         }
 
         sendButton.setOnClickListener {
@@ -135,7 +139,8 @@ class ChatActivity : AppCompatActivity() {
         Log.d(TAG, "🔎 בודק חיבור לאינטרנט...")
         if (!isNetworkAvailable()) {
             Log.e(TAG, "❌ אין חיבור אינטרנט פעיל במכשיר!")
-            addMessageToChat(ChatMessage("שגיאה: אין חיבור לאינטרנט.", false))
+            // תורגם לאנגלית
+            addMessageToChat(ChatMessage("Error: No internet connection.", false))
             return
         }
         Log.d(TAG, "✅ אינטרנט תקין. עובר לשליחה לג'מיני.")
@@ -170,7 +175,8 @@ class ChatActivity : AppCompatActivity() {
                         addMessageToChat(ChatMessage(botReply, false))
                     } else {
                         Log.w(TAG, "⚠️ אזהרה: response.text חזר כ-null!")
-                        addMessageToChat(ChatMessage("קיבלתי תגובה ריקה מגוגל.", false))
+                        // תורגם לאנגלית
+                        addMessageToChat(ChatMessage("Received an empty response from Google.", false))
                     }
                     sendButton.isEnabled = true
                 }
@@ -182,11 +188,12 @@ class ChatActivity : AppCompatActivity() {
                 e.printStackTrace()
 
                 withContext(Dispatchers.Main) {
+                    // כל השגיאות תורגמו לאנגלית
                     val displayError = when {
-                        e.message?.contains("404") == true -> "שגיאה 404: המודל לא נמצא."
-                        e.message?.contains("429") == true -> "שגיאה 429: חריגה ממכסת הבקשות."
-                        e.message?.contains("401") == true -> "שגיאה 401: בעיית הרשאה במפתח ה-API."
-                        else -> "שגיאה טכנית בתקשורת."
+                        e.message?.contains("404") == true -> "Error 404: Model not found."
+                        e.message?.contains("429") == true -> "Error 429: Quota exceeded."
+                        e.message?.contains("401") == true -> "Error 401: API key authorization issue."
+                        else -> "Technical communication error."
                     }
                     addMessageToChat(ChatMessage(displayError, false))
                     sendButton.isEnabled = true
