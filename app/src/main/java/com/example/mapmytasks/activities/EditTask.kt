@@ -137,7 +137,6 @@ class EditTask : AppCompatActivity() {
         val taskName = taskNameEdit.text.toString().trim()
 
         if (taskName.isEmpty() || selectedDateTime.isEmpty() || selectedLocation.isEmpty() || selectedLat == 0.0) {
-            // תורגם לאנגלית
             toast("Please fill in all details before saving")
             return
         }
@@ -159,8 +158,13 @@ class EditTask : AppCompatActivity() {
 
         TaskManager.updateTask(taskOwnerId, taskId, updatedTask, onSuccess = {
             toast("Task updated successfully")
-            // הנה התיקון החשוב שלנו! עכשיו משתמשים במחלקה החדשה והאפור נעלם.
+
+            // תזמון מזג האוויר המעודכן
             WeatherWorker.scheduleWeatherWorker(this, updatedTask)
+
+            // --- הוספנו: תזמון ההתראה (השעון המעורר) לתאריך/השעה החדשים! ---
+            AppUtils.scheduleTaskAlarm(this, updatedTask, taskOwnerId)
+
             setResult(RESULT_OK)
             finish()
         }, onFailure = { e ->
@@ -174,6 +178,16 @@ class EditTask : AppCompatActivity() {
 
         TaskManager.deleteTask(taskOwnerId, taskId, onSuccess = {
             WorkManager.getInstance(this).cancelUniqueWork("weather_$taskId")
+
+            // בונוס קטן: ביטול ההתראה אם המשימה נמחקת
+            val alarmManager = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+            val intent = android.content.Intent(this, com.example.mapmytasks.receivers.TaskReminderReceiver::class.java)
+            val pendingIntent = android.app.PendingIntent.getBroadcast(
+                this, taskId.hashCode(), intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.cancel(pendingIntent)
+
             toast("Task deleted")
             setResult(RESULT_OK)
             finish()

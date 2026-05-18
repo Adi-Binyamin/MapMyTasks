@@ -37,11 +37,30 @@ object DateTimeUtils {
         onDateTimeSelected: (formattedDateTime: String, year: Int, month: Int, day: Int) -> Unit
     ) {
         val calendar = Calendar.getInstance()
-        DatePickerDialog(context, { _, year, month, day ->
+
+        val datePickerDialog = DatePickerDialog(context, { _, year, month, day ->
             TimePickerDialog(context, { _, hour, minute ->
-                val formattedStr = String.format("%02d/%02d/%04d %02d:%02d", day, month + 1, year, hour, minute)
-                onDateTimeSelected(formattedStr, year, month + 1, day)
+
+                // בדיקה אם הזמן והשעה שנבחרו קטנים מהרגע הנוכחי
+                val selectedCalendar = Calendar.getInstance().apply {
+                    set(year, month, day, hour, minute, 0)
+                }
+
+                if (selectedCalendar.timeInMillis < System.currentTimeMillis()) {
+                    // הזמן כבר עבר - מקפיצים הודעה ולא שומרים את הבחירה!
+                    context.toast("Please select a future date and time")
+                } else {
+                    // הזמן תקין (בעתיד) - מעבירים הלאה
+                    val formattedStr = String.format("%02d/%02d/%04d %02d:%02d", day, month + 1, year, hour, minute)
+                    onDateTimeSelected(formattedStr, year, month + 1, day)
+                }
+
             }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
-        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+        }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+
+        // --- התוספת שלנו: מונע לחיצה על ימים בעבר בלוח השנה ---
+        datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 1000
+
+        datePickerDialog.show()
     }
 }

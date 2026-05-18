@@ -19,6 +19,7 @@ import androidx.core.app.NotificationCompat
 import com.example.mapmytasks.models.TaskStatus
 import com.example.mapmytasks.receivers.NotificationActionReceiver
 import com.google.android.gms.location.*
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 
 class LocationTaskService : Service() {
@@ -79,6 +80,30 @@ class LocationTaskService : Service() {
 
         startLocationUpdates()
         handler.post(timeCheckRunnable)
+
+        // --- הוספנו: האזנה ברקע למשימות חדשות ממשתמשים אחרים! ---
+        listenForPartnerTasksInBackground()
+    }
+
+    // הפונקציה החדשה שעושה את הקסם!
+    private fun listenForPartnerTasksInBackground() {
+        val userId = TaskManager.getCurrentUserId() ?: return
+
+        // מאזין לשרת כל הזמן, גם כשהאפליקציה סגורה (כל עוד השירות רץ)
+        FirebaseFirestore.getInstance().collection("users").document(userId).collection("tasks")
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+
+                for (doc in snapshot.documents) {
+                    val task = doc.toObject(com.example.mapmytasks.models.Task::class.java)?.copy(id = doc.id) ?: continue
+
+                    // אם זו משימה פעילה, אנחנו אומרים לטלפון לכוון שעון מעורר!
+                    // (אל דאגה, המערכת חכמה - אם כבר יש לה שעון כזה, היא פשוט תעדכן אותו ולא תעשה כפול)
+                    if (task.status == TaskStatus.PENDING) {
+                        com.example.mapmytasks.utilities.AppUtils.scheduleTaskAlarm(applicationContext, task, userId)
+                    }
+                }
+            }
     }
 
     private fun startLocationUpdates() {
@@ -103,9 +128,6 @@ class LocationTaskService : Service() {
 
         if (fineLocationGranted && backgroundLocationGranted) {
             fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
-            Log.d(TAG, "Location updates started")
-        } else {
-            Log.d(TAG, "No location permissions or background location denied")
         }
     }
 
@@ -133,9 +155,7 @@ class LocationTaskService : Service() {
                 val diff = now.timeInMillis - taskCal.timeInMillis
 
                 if (diff >= 60000) {
-                    TaskManager.updateTaskStatus(userId, taskId, TaskStatus.MISSED) {
-                        Log.d(TAG, "Task $taskId marked as MISSED automatically")
-                    }
+                    TaskManager.updateTaskStatus(userId, taskId, TaskStatus.MISSED)
                     continue
                 }
 

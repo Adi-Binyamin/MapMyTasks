@@ -95,19 +95,14 @@ class CreateTask : AppCompatActivity() {
 
     private fun setupSaveButton() {
         saveTaskBtn.setOnClickListener {
-            // 1. איסוף הנתונים מהשדות
             val taskName = taskNameInput.text.toString().trim()
             val selectedOption = assignToSpinner.selectedItem?.toString() ?: "My Tasks"
 
-            // 2. בדיקת תקינות מקיפה (ולידציה)
-            // בדקנו: שם, תאריך, תיאור המיקום, וקואורדינטות (לוודא שבאמת נבחר מיקום מהרשימה)
             if (taskName.isEmpty() || selectedDateTime.isEmpty() || selectedLocation.isEmpty() || selectedLat == 0.0) {
-                // תורגם לאנגלית
                 toast("Please fill in all details, including selecting a location from the list")
-                return@setOnClickListener // עוצר כאן ולא ממשיך לשמירה
+                return@setOnClickListener
             }
 
-            // 3. מניעת לחיצות כפולות - נעילת הכפתור
             saveTaskBtn.isEnabled = false
 
             val myUid = TaskManager.getCurrentUserId() ?: run {
@@ -128,25 +123,20 @@ class CreateTask : AppCompatActivity() {
                 assignTo = targetAssignTo
             )
 
-            // 4. תהליך השמירה
             if (selectedOption == "My Tasks") {
                 saveToFirestore(myUid, task, "My Tasks")
-                // הערה: בתוך saveToFirestore, אם הכל מצליח, אתה בטח סוגר את המסך (finish)
-                // אם יש שם שגיאה, כדאי להוסיף שם saveTaskBtn.isEnabled = true
             } else {
                 val partnerEmail = selectedOption.lowercase()
                 TaskManager.getUserIdByEmail(partnerEmail, onSuccess = { partnerUid ->
                     if (partnerUid != null) {
                         saveToFirestore(partnerUid, task, partnerEmail)
                     } else {
-                        // תורגם לאנגלית
                         toast("Partner not found in the system")
-                        saveTaskBtn.isEnabled = true // משחררים את הכפתור לתיקון
+                        saveTaskBtn.isEnabled = true
                     }
                 }, onFailure = {
-                    // תורגם לאנגלית
                     toast("Error searching for partner")
-                    saveTaskBtn.isEnabled = true // משחררים את הכפתור לניסיון חוזר
+                    saveTaskBtn.isEnabled = true
                 })
             }
         }
@@ -155,13 +145,17 @@ class CreateTask : AppCompatActivity() {
     private fun saveToFirestore(targetUid: String, task: Task, targetName: String) {
         TaskManager.addTask(targetUid, task, onSuccess = { updatedTask ->
             toast("Task saved and sent to $targetName")
-            // הנה התיקון שלנו! משתמשים במחלקה החדשה במקום בפונקציה שנמחקה מ-AppUtils
+
+            // מתזמן את מזג האוויר
             WeatherWorker.scheduleWeatherWorker(this, updatedTask)
+
+            // --- הנה השורה שהוספנו! מתזמן את ההתראה של המשימה ---
+            AppUtils.scheduleTaskAlarm(this, updatedTask, targetUid)
+
             finish()
         }, onFailure = { e ->
             toast("Error: ${e.message}")
-            saveTaskBtn.isEnabled =
-                true // חשוב: אם השמירה ל-Firestore נכשלה, נשחרר את הכפתור כדי שהמשתמש יוכל לנסות שוב
+            saveTaskBtn.isEnabled = true
         })
     }
 
@@ -172,8 +166,6 @@ class CreateTask : AppCompatActivity() {
                 dateTimeBtn.text = selectedDateTime
 
                 val selectedCategory = categorySpinner.selectedItem.toString()
-
-                // קריאות למחלקות העזר המרכזיות שלנו:
                 AppUtils.checkProductivityWarning(this, selectedCategory, selectedDateTime)
                 AppUtils.checkHolidayHebcal(this, year, month, day)
             }

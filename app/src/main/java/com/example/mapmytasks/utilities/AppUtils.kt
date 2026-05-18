@@ -18,20 +18,17 @@ fun Context.toast(msg: String) {
 
 object AppUtils {
 
-    // רשימת הקטגוריות המרכזית של האפליקציה! שנה אותה כאן, והיא תשתנה בכל המסכים
     val CATEGORIES = listOf(
         "Work", "Study", "Personal", "Shopping", "Health",
         "Finance", "Hobby", "Travel", "School", "Chores", "Other"
     )
 
-    // טעינת הספינר של הקטגוריות בסיבוב אחד
     fun setupCategorySpinner(context: Context, spinner: Spinner) {
         val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, CATEGORIES)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
     }
 
-    // בדיקת יעילות והקפצת אזהרה
     fun checkProductivityWarning(context: Context, category: String, dateTime: String) {
         val userId = TaskManager.getCurrentUserId() ?: return
         val timeIndex = DateTimeUtils.getTimeIndexFromDateTime(dateTime)
@@ -39,15 +36,12 @@ object AppUtils {
 
         TaskManager.getProductivityStats(userId, category, timeIndex) { total, done ->
             if (total >= 3 && (done.toFloat() / total) < 0.5) {
-                // תורגם לאנגלית
-                val timeNames =
-                    listOf("in the morning", "in the afternoon", "in the evening", "at night")
+                val timeNames = listOf("in the morning", "in the afternoon", "in the evening", "at night")
                 context.toast("⚠️ Heads up: You usually don't finish $category tasks ${timeNames[timeIndex]}. Consider changing the time?")
             }
         }
     }
 
-    // בדיקת חגים של Hebcal
     fun checkHolidayHebcal(context: Context, year: Int, month: Int, day: Int) {
         Thread {
             try {
@@ -71,14 +65,48 @@ object AppUtils {
                     }
 
                     if (holidayName != null) {
-                        // חזרה ל-Thread הראשי כדי להציג את ה-Toast
                         Handler(Looper.getMainLooper()).post {
-                            // תורגם לאנגלית
                             context.toast("Heads up: $holidayName falls on this date")
                         }
                     }
                 }
             } catch (e: Exception) { e.printStackTrace() }
         }.start()
+    }
+
+    // --- הפונקציה החדשה שמתזמנת את ההתראה ---
+    fun scheduleTaskAlarm(context: Context, task: com.example.mapmytasks.models.Task, userId: String) {
+        try {
+            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+            val date = sdf.parse(task.dateTime) ?: return
+
+            if (date.time <= System.currentTimeMillis()) return
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            val intent = android.content.Intent(context, com.example.mapmytasks.receivers.TaskReminderReceiver::class.java).apply {
+                putExtra("TASK_ID", task.id)
+                putExtra("TASK_NAME", task.name)
+                putExtra("USER_ID", userId)
+            }
+
+            val pendingIntent = android.app.PendingIntent.getBroadcast(
+                context,
+                task.id.hashCode(),
+                intent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, date.time, pendingIntent)
+                } else {
+                    alarmManager.set(android.app.AlarmManager.RTC_WAKEUP, date.time, pendingIntent)
+                }
+            } else {
+                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, date.time, pendingIntent)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
