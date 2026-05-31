@@ -31,13 +31,90 @@ class LocationTaskService : Service() {
     private var lastLat: Double = 0.0
     private var lastLng: Double = 0.0
     private val handler = Handler(Looper.getMainLooper())
+    private var lastSentTaskCheck = 0L
+
     private val timeCheckRunnable = object : Runnable {
         override fun run() {
+            // 1. בדיקת המשימות שלך לפי מיקום וזמן (כל 10 שניות)
             if (lastLat != 0.0 && lastLng != 0.0) {
                 checkTasks(lastLat, lastLng)
             }
+
+            // 2. בדיקת משימות ששלחת לאחרים לפי זמן (קריאה לשרת רק פעם בדקה)
+            val now = System.currentTimeMillis()
+            if (now - lastSentTaskCheck >= 60000L) {
+                checkSentTasksDirectly()
+                lastSentTaskCheck = now
+            }
+
             handler.postDelayed(this, 10000L)
         }
+    }
+    // שולף ישירות מהשרת את המשימות ששלחת, בלי לשמור אותן ברשימה גלובלית
+    private fun checkSentTasksDirectly() {
+        val myEmail = TaskManager.getCurrentUserEmail() ?: return
+        val now = Calendar.getInstance()
+
+        FirebaseFirestore.getInstance().collectionGroup("tasks")
+            .whereEqualTo("createdBy", myEmail)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                for (doc in snapshot.documents) {
+                    val task = doc.toObject(com.example.mapmytasks.models.Task::class.java)?.copy(id = doc.id) ?: continue
+
+                    if (task.assignTo == myEmail) continue // מדלג על משימות ששייכות לך
+                    if (task.status != TaskStatus.PENDING) continue
+                    if (task.dateTime.isEmpty()) continue
+
+                    val parts = task.dateTime.split(" ", "/", ":")
+                    if (parts.size < 5) continue
+
+                    val taskCal = Calendar.getInstance().apply {
+                        set(parts[2].toInt(), parts[1].toInt() - 1, parts[0].toInt(),
+                            parts[3].toInt(), parts[4].toInt(), 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+
+                    val diff = now.timeInMillis - taskCal.timeInMillis
+                    val isSameMinute = diff in 0..59999
+
+                    if (isSameMinute) {
+                        val uniqueKey = "${task.id}_sent"
+                        if (!notifiedTasks.contains(uniqueKey)) {
+                            showSentTaskNotification(task)
+                            notifiedTasks.add(uniqueKey)
+                        }
+                    }
+                }
+            }
+    }
+
+    // מציג התראה נקייה ללא כפתורי פעולה - רק מידע ומייל היעד
+    private fun showSentTaskNotification(task: com.example.mapmytasks.models.Task) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notifChannelId = "sent_tasks_channel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(notifChannelId, "Sent Tasks Reminders", NotificationManager.IMPORTANCE_HIGH)
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(this, notifChannelId)
+            .setContentTitle("Reminder: Task assigned to partner")
+            .setContentText("The task '${task.name}' is due for ${task.assignTo}")
+            .setStyle(NotificationCompat.BigTextStyle().bigText(
+                "Task details: ${task.name}\\n" +
+                        "Category: ${task.category}\\n" +
+                        "Task location: ${task.location}\\n " +
+                        "Sent to partner: ${task.assignTo}"
+            ))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        // שימוש ב-hashCode שונה כדי שלא יתנגש עם התראות רגילות במידה ויהיו
+        notificationManager.notify(task.id.hashCode() + 2, notification)
     }
 
     companion object {
