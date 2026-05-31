@@ -163,7 +163,7 @@ class EditTask : AppCompatActivity() {
             WeatherWorker.scheduleWeatherWorker(this, updatedTask)
 
             // --- הוספנו: תזמון ההתראה (השעון המעורר) לתאריך/השעה החדשים! ---
-            AppUtils.scheduleTaskAlarm(this, updatedTask, taskOwnerId)
+           // AppUtils.scheduleTaskAlarm(this, updatedTask, taskOwnerId)
 
             setResult(RESULT_OK)
             finish()

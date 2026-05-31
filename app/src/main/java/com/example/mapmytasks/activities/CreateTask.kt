@@ -150,7 +150,7 @@ class CreateTask : AppCompatActivity() {
             WeatherWorker.scheduleWeatherWorker(this, updatedTask)
 
             // --- הנה השורה שהוספנו! מתזמן את ההתראה של המשימה ---
-            AppUtils.scheduleTaskAlarm(this, updatedTask, targetUid)
+            //AppUtils.scheduleTaskAlarm(this, updatedTask, targetUid)
 
             finish()
         }, onFailure = { e ->

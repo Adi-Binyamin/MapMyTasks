@@ -97,11 +97,13 @@ class LocationTaskService : Service() {
                 for (doc in snapshot.documents) {
                     val task = doc.toObject(com.example.mapmytasks.models.Task::class.java)?.copy(id = doc.id) ?: continue
 
-                    // אם זו משימה פעילה, אנחנו אומרים לטלפון לכוון שעון מעורר!
-                    // (אל דאגה, המערכת חכמה - אם כבר יש לה שעון כזה, היא פשוט תעדכן אותו ולא תעשה כפול)
+                    // התיקון: ביטלנו את הקריאה לשעון המעורר (scheduleTaskAlarm)
+                    // כדי למנוע התראות שמבוססות על זמן בלבד ועוקפות את בדיקת המיקום היפה שעשית
+                    /*
                     if (task.status == TaskStatus.PENDING) {
                         com.example.mapmytasks.utilities.AppUtils.scheduleTaskAlarm(applicationContext, task, userId)
                     }
+                    */
                 }
             }
     }
@@ -119,15 +121,11 @@ class LocationTaskService : Service() {
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        val backgroundLocationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ActivityCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        } else true
-
-        if (fineLocationGranted && backgroundLocationGranted) {
+        // התנאי תוקן: המערכת תשתמש בהרשאה שביקשת מהמשתמש במסך יצירת המשימה
+        if (fineLocationGranted) {
             fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
+        } else {
+            Log.e(TAG, "No fine location permission granted!")
         }
     }
 
