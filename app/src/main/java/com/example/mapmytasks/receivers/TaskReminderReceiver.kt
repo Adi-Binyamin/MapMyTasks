@@ -39,14 +39,14 @@ class TaskReminderReceiver : BroadcastReceiver() {
         if (isCreator) {
             // --- מקרה 1: אתה יוצר המשימה (התראה למידע בלבד, בלי כפתורים) ---
             notificationBuilder
-                .setContentTitle("משימה ששלחת יצאה לדרך 📤")
-                .setContentText("תזכורת: המשימה '$taskName' נשלחה לשותף שלך.")
+                .setContentTitle("A task you sent is underway 📤")
+                .setContentText("Reminder: The task '$taskName' was sent to your partner.")
 
             // לא מוסיפים שום addAction, אז לא יהיו כפתורי אישור/סירוב
         } else {
             // --- מקרה 2: השותף קיבל את המשימה (ההתראה הרגילה עם הכפתורים) ---
             notificationBuilder
-                .setContentTitle("משימה חדשה עבורך 📅")
+                .setContentTitle("New task for you 📅")
                 .setContentText(taskName)
 
             // כפתור בוצע

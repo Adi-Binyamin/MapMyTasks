@@ -1,6 +1,5 @@
 package com.example.mapmytasks.data
 
-import android.util.Log
 import com.example.mapmytasks.models.Task
 import com.example.mapmytasks.models.TaskStatus
 import com.google.firebase.auth.FirebaseAuth
@@ -70,7 +69,7 @@ object TaskManager {
         db.collection("users").whereEqualTo("email", friendEmail).get()
             .addOnSuccessListener { documents ->
                 if (documents.isEmpty) {
-                    onFailure("משתמש זה לא רשום באפליקציה")
+                    onFailure("This user is not registered in the app")
                 } else {
                     val permission = hashMapOf("ownerId" to userId, "ownerEmail" to userEmail, "allowedEditorEmail" to friendEmail)
                     db.collection("permissions").add(permission).addOnSuccessListener { onSuccess() }
@@ -120,7 +119,7 @@ object TaskManager {
         getTasksForUser(userId, onSuccess = {
             tasks.addAll(it)
             onComplete?.invoke()
-        }, onFailure = { Log.e("TaskManager", "Error", it) })
+        }, onFailure = {  })
     }
 
     fun getTask(userId: String, taskId: String, onSuccess: (Task?) -> Unit, onFailure: (Exception) -> Unit) {

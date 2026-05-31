@@ -13,7 +13,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import com.example.mapmytasks.models.TaskStatus
@@ -123,12 +122,10 @@ class LocationTaskService : Service() {
         private const val CHANNEL_NAME = "Task Location Service"
         private const val CHECK_INTERVAL_MS = 5000L
         private const val GEOFENCE_RADIUS_METERS = 1000f
-        private const val TAG = "TASK_NOTIFY"
     }
 
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "Service created")
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -173,14 +170,6 @@ class LocationTaskService : Service() {
 
                 for (doc in snapshot.documents) {
                     val task = doc.toObject(com.example.mapmytasks.models.Task::class.java)?.copy(id = doc.id) ?: continue
-
-                    // התיקון: ביטלנו את הקריאה לשעון המעורר (scheduleTaskAlarm)
-                    // כדי למנוע התראות שמבוססות על זמן בלבד ועוקפות את בדיקת המיקום היפה שעשית
-                    /*
-                    if (task.status == TaskStatus.PENDING) {
-                        com.example.mapmytasks.utilities.AppUtils.scheduleTaskAlarm(applicationContext, task, userId)
-                    }
-                    */
                 }
             }
     }
@@ -201,8 +190,6 @@ class LocationTaskService : Service() {
         // התנאי תוקן: המערכת תשתמש בהרשאה שביקשת מהמשתמש במסך יצירת המשימה
         if (fineLocationGranted) {
             fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
-        } else {
-            Log.e(TAG, "No fine location permission granted!")
         }
     }
 
@@ -252,8 +239,7 @@ class LocationTaskService : Service() {
                     }
                 }
             }
-        }, onFailure = { e ->
-            Log.e(TAG, "Error getting tasks: ${e.message}")
+        }, onFailure = {
         })
     }
 
