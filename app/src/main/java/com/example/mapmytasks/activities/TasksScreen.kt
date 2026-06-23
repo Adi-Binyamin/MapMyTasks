@@ -35,6 +35,7 @@ class TasksScreen : AppCompatActivity() {
     // Tracks the currently selected sorting method (date or category).
     private var currentSortBy: String = "date"
 
+    //go to edit screen and return the result
     private val editTaskLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->

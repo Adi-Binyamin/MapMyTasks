@@ -69,7 +69,7 @@ class TasksAdapter(
         val lightPastels = listOf("#D1EAFF", "#D1F2EB", "#FADBD8", "#E8DAEF", "#FCF3CF")
 
         val idx = task.colorIndex % darkPastels.size
-        holder.container.setBackgroundColor(Color.parseColor(darkPastels[idx]))
+        holder.container.setBackgroundColor(Color.parseColor(darkPastels[idx])) //blue, green, pink, purple, yellow
         holder.cardView.setBackgroundColor(Color.parseColor(lightPastels[idx]))
 
         if (currentGroupKey != prevGroupKey) {

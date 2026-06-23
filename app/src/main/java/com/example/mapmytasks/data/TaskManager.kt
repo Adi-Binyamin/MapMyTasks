@@ -198,7 +198,7 @@ object TaskManager {
         }
     }
 
-    // Calculates productivity stats for a single category and a specific time slot index.
+    // Calculates productivity stats for a single category and a specific time slot index. FOR ALGORITHM
     fun getProductivityStats(userId: String, category: String, timeIndex: Int, onSuccess: (total: Int, done: Int) -> Unit) {
         db.collection("users").document(userId).collection("tasks").whereEqualTo("category", category).get()
             .addOnSuccessListener { result ->

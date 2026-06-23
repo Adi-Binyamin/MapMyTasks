@@ -52,11 +52,11 @@ class WeeklySummary : AppCompatActivity() {
             val weekLabel = "${weekDates.first()} - ${weekDates.last()}"
 
             setupBarChart(
-                chartDoneTimeSlots,
-                doneS.toList(),
-                timeSlots,
-                "Done Tasks ($weekLabel)",
-                android.R.color.holo_green_light
+                chartDoneTimeSlots,//chart from xml
+                doneS.toList(), //data
+                timeSlots, // x
+                "Done Tasks ($weekLabel)", //label of thr graph
+                android.R.color.holo_green_light //color
             )
             setupBarChart(
                 chartPendingTimeSlots,
@@ -90,20 +90,20 @@ class WeeklySummary : AppCompatActivity() {
     // Helper function to configure the visual appearance, labels, and animation for a given BarChart instance.
     private fun setupBarChart(chart: BarChart, values: List<Float>, labels: List<String>, descriptionText: String, colorRes: Int) {
         val entries = values.mapIndexed { index, value -> BarEntry(index.toFloat(), value) }
-        val dataSet = BarDataSet(entries, "")
+        val dataSet = BarDataSet(entries, "") //union all thr entries in thr graph to one graph
         dataSet.color = resources.getColor(colorRes, null)
         dataSet.valueTextSize = 10f
 
-        chart.data = BarData(dataSet)
-        chart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
+        chart.data = BarData(dataSet) //draw the graph as graph
+        chart.xAxis.valueFormatter = IndexAxisValueFormatter(labels) // names for labels
         chart.xAxis.position = XAxis.XAxisPosition.BOTTOM
-        chart.xAxis.granularity = 1f
+        chart.xAxis.granularity = 1f // tab between labels
         chart.xAxis.labelRotationAngle = -45f
 
         chart.axisRight.isEnabled = false
         chart.axisLeft.axisMinimum = 0f
-        chart.description.text = descriptionText
-        chart.animateY(1000)
-        chart.invalidate()
+        chart.description.text = descriptionText //label of the graph
+        chart.animateY(1000)// how fast it grows
+        chart.invalidate()// draw with all changes
     }
 }

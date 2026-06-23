@@ -168,10 +168,10 @@ class LocationTaskService : Service() {
     // Requests continuous location updates if the required permission is granted.
     private fun startLocationUpdates() {
         val request = LocationRequest.create().apply {
-            interval = CHECK_INTERVAL_MS
-            fastestInterval = 2000L
+            interval = CHECK_INTERVAL_MS //ask for user location every 5 sec
+            fastestInterval = 2000L // min time to update user location is 2 sec
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-            smallestDisplacement = 1f
+            smallestDisplacement = 1f //dont sent update if the user didnt move at least 1 meter
         }
 
         val fineLocationGranted = ActivityCompat.checkSelfPermission(
