@@ -157,7 +157,6 @@ class ChatActivity : AppCompatActivity() {
                 }
 
             } catch (e: Exception) {
-                e.printStackTrace()
 
                 // Maps HTTP error codes from the API exception to user-friendly error messages.
                 withContext(Dispatchers.Main) {
