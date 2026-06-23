@@ -12,7 +12,7 @@
         android:id="@+id/titleText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="MAP MY TASK"
+        android:text="MAP MY TASKS"
         android:textSize="38sp" android:fontFamily="sans-serif-black"
         android:textStyle="bold"
         android:textColor="#2196F3"

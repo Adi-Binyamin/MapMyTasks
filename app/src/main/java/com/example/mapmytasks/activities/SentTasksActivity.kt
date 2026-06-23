@@ -7,8 +7,14 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.mapmytasks.R
 import com.example.mapmytasks.data.TaskManager
 import com.example.mapmytasks.models.TaskStatus
+import com.example.mapmytasks.utilities.toast
+
 import com.google.firebase.firestore.ListenerRegistration
 
+/**
+ * SentTasksActivity allows the user to view tasks they have assigned to other authorized partners.
+ * It uses a spinner to select a partner and a list view to display real-time task updates.
+ */
 class SentTasksActivity : AppCompatActivity() {
 
     private lateinit var listView: ListView
@@ -23,6 +29,7 @@ class SentTasksActivity : AppCompatActivity() {
 
     private var sentTasksListener: ListenerRegistration? = null
 
+    // Initializes the UI components, sets up adapters, and triggers the loading of partners.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sent_tasks)
@@ -47,7 +54,6 @@ class SentTasksActivity : AppCompatActivity() {
         spinnerPartners.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 val selectedPartner = partnersList[position]
-                // Match the English default text
                 if (myEmail != null && selectedPartner != "Select partner from permissions list...") {
                     startListeningToTasks(myEmail, selectedPartner)
                 }
@@ -56,32 +62,32 @@ class SentTasksActivity : AppCompatActivity() {
         }
     }
 
+    // Fetches the list of authorized partners from Firestore and populates the spinner.
     private fun loadPartners(myEmail: String) {
         TaskManager.getPartners(myEmail, onSuccess = { partners ->
             partnersList.clear()
-            // Translated default option
             partnersList.add("Select partner from permissions list...")
             partnersList.addAll(partners)
             partnersAdapter.notifyDataSetChanged()
         }, onFailure = {
             toast("Error loading partners")
+
         })
     }
 
+    // Attaches a real-time listener to fetch and format tasks assigned to the selected partner.
     private fun startListeningToTasks(myEmail: String, partnerEmail: String) {
-        // Clean up previous listener if exists
+        // Removes any existing listener before starting a new one to avoid duplicate data streams.
         sentTasksListener?.remove()
 
         sentTasksListener =
             TaskManager.listenToSentTasksForPartner(myEmail, partnerEmail) { tasks ->
                 tasksList.clear()
                 if (tasks.isEmpty()) {
-                    // Translated empty state
                     tasksList.add("No tasks found sent to $partnerEmail")
                 } else {
                     for (task in tasks) {
                         val icon = if (task.status == TaskStatus.DONE) "✅" else "⏳"
-                        // Translated task details layout
                         val taskDetails = """
                         $icon Task: ${task.name}
                         📁 Category: ${task.category}
@@ -96,12 +102,9 @@ class SentTasksActivity : AppCompatActivity() {
             }
     }
 
+    // Cleans up the Firestore listener to prevent memory leaks when the activity is closed.
     override fun onDestroy() {
         super.onDestroy()
         sentTasksListener?.remove()
-    }
-
-    private fun toast(msg: String) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }

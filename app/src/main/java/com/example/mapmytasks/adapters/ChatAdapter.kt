@@ -8,9 +8,13 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.mapmytasks.R
 
 
-// מודל הנתונים: טקסט ההודעה, והאם היא נשלחה על ידי המשתמש (true) או הבוט (false)
+// Data model representing a single chat message and identifying its sender (user or bot).
 data class ChatMessage(val text: String, val isUser: Boolean)
 
+/**
+ * ChatAdapter manages the RecyclerView display for the chat interface.
+ * It toggles visibility between user and bot message bubbles based on the sender.
+ */
 class ChatAdapter(private val messages: List<ChatMessage>) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
 
     class ChatViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -18,6 +22,7 @@ class ChatAdapter(private val messages: List<ChatMessage>) : RecyclerView.Adapte
         val botMessageText: TextView = view.findViewById(R.id.botMessageText)
     }
 
+    // Inflates the shared layout containing both user and bot message views.
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_chat_message, parent, false)
         return ChatViewHolder(view)
@@ -25,16 +30,17 @@ class ChatAdapter(private val messages: List<ChatMessage>) : RecyclerView.Adapte
 
     override fun getItemCount(): Int = messages.size
 
+    // Binds the data to the views and toggles visibility depending on who sent the message.
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
         val message = messages[position]
 
         if (message.isUser) {
-            // מציגים את הבועה הכחולה ומסתירים את האפורה
+            // Displays the user message bubble and hides the bot message bubble.
             holder.userMessageText.text = message.text
             holder.userMessageText.visibility = View.VISIBLE
             holder.botMessageText.visibility = View.GONE
         } else {
-            // מציגים את הבועה האפורה ומסתירים את הכחולה
+            // Displays the bot message bubble and hides the user message bubble.
             holder.botMessageText.text = message.text
             holder.botMessageText.visibility = View.VISIBLE
             holder.userMessageText.visibility = View.GONE

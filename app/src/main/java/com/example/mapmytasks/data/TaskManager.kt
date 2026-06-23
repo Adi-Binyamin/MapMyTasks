@@ -2,6 +2,7 @@ package com.example.mapmytasks.data
 
 import com.example.mapmytasks.models.Task
 import com.example.mapmytasks.models.TaskStatus
+import com.example.mapmytasks.utilities.DateTimeUtils
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -14,8 +15,9 @@ object TaskManager {
     private val auth = FirebaseAuth.getInstance()
     private val tasks = mutableListOf<Task>()
 
-    // --- פעולות התחברות והרשמה (Auth) ---
+    // --- Auth Operations ---
 
+    // Registers a new user with email and password, then saves their basic info in Firestore.
     fun registerUser(email: String, password: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
@@ -31,6 +33,7 @@ object TaskManager {
             }
     }
 
+    // Authenticates an existing user with email and password.
     fun loginUser(email: String, password: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
@@ -38,15 +41,20 @@ object TaskManager {
             }
     }
 
+    // Signs out the currently authenticated user.
     fun logoutUser() {
         auth.signOut()
     }
 
-    // --- פעולות כלליות (משתמשים והרשאות) ---
+    // --- Users and Permissions Operations ---
 
+    // Retrieves the unique ID of the current logged-in user.
     fun getCurrentUserId(): String? = auth.currentUser?.uid
+
+    // Retrieves the email address of the current logged-in user.
     fun getCurrentUserEmail(): String? = auth.currentUser?.email
 
+    // Listens for real-time updates to permissions granted to the current user.
     fun listenToMyPermissions(onUpdate: (emails: List<String>, docIds: List<String>) -> Unit): ListenerRegistration? {
         val uid = getCurrentUserId() ?: return null
         return db.collection("permissions").whereEqualTo("ownerId", uid)
@@ -63,6 +71,7 @@ object TaskManager {
             }
     }
 
+    // Grants a specified user permission to assign tasks to the current user.
     fun addPermission(friendEmail: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
         val userEmail = getCurrentUserEmail() ?: return
         val userId = getCurrentUserId() ?: return
@@ -77,10 +86,12 @@ object TaskManager {
             }
     }
 
+    // Revokes a previously granted permission using its document ID.
     fun deletePermission(docId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("permissions").document(docId).delete().addOnSuccessListener { onSuccess() }.addOnFailureListener { onFailure(it) }
     }
 
+    // Retrieves a list of emails of users who have authorized the current user.
     fun getPartners(myEmail: String, onSuccess: (List<String>) -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("permissions").whereEqualTo("allowedEditorEmail", myEmail).get()
             .addOnSuccessListener { result ->
@@ -90,14 +101,16 @@ object TaskManager {
             .addOnFailureListener { onFailure(it) }
     }
 
+    // Looks up and retrieves a user's unique ID by their email address.
     fun getUserIdByEmail(email: String, onSuccess: (String?) -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("users").whereEqualTo("email", email).get()
             .addOnSuccessListener { onSuccess(if (it.isEmpty) null else it.documents[0].id) }
             .addOnFailureListener { onFailure(it) }
     }
 
-    // --- פעולות משימות (Tasks) ---
+    // --- Tasks Operations ---
 
+    // Listens for real-time updates to tasks assigned by the current user to a specific partner.
     fun listenToSentTasksForPartner(myEmail: String, partnerEmail: String, onUpdate: (List<Task>) -> Unit): ListenerRegistration {
         return db.collectionGroup("tasks").whereEqualTo("createdBy", myEmail).whereEqualTo("assignTo", partnerEmail)
             .addSnapshotListener { value, error ->
@@ -106,6 +119,7 @@ object TaskManager {
             }
     }
 
+    // Fetches all tasks assigned to a specific user.
     fun getTasksForUser(userId: String, onSuccess: (List<Task>) -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("users").document(userId).collection("tasks").get()
             .addOnSuccessListener { result ->
@@ -114,20 +128,14 @@ object TaskManager {
             .addOnFailureListener { onFailure(it) }
     }
 
-    fun fetchTasks(userId: String, onComplete: (() -> Unit)? = null) {
-        tasks.clear()
-        getTasksForUser(userId, onSuccess = {
-            tasks.addAll(it)
-            onComplete?.invoke()
-        }, onFailure = {  })
-    }
-
+    // Retrieves a single task by its unique ID for a specific user.
     fun getTask(userId: String, taskId: String, onSuccess: (Task?) -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("users").document(userId).collection("tasks").document(taskId).get()
             .addOnSuccessListener { onSuccess(it.toObject(Task::class.java)) }
             .addOnFailureListener { onFailure(it) }
     }
 
+    // Adds a new task to the user's collection and updates the document with its generated ID.
     fun addTask(userId: String, task: Task, onSuccess: ((Task) -> Unit)? = null, onFailure: ((Exception) -> Unit)? = null) {
         db.collection("users").document(userId).collection("tasks").add(task)
             .addOnSuccessListener { doc ->
@@ -139,16 +147,19 @@ object TaskManager {
             .addOnFailureListener { onFailure?.invoke(it) }
     }
 
+    // Updates an existing task with new details.
     fun updateTask(userId: String, taskId: String, updatedTask: Task, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("users").document(userId).collection("tasks").document(taskId).set(updatedTask)
             .addOnSuccessListener { onSuccess() }.addOnFailureListener { onFailure(it) }
     }
 
+    // Deletes a specific task from a user's collection.
     fun deleteTask(userId: String, taskId: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("users").document(userId).collection("tasks").document(taskId).delete()
             .addOnSuccessListener { onSuccess() }.addOnFailureListener { onFailure(it) }
     }
 
+    // Updates only the status field of a specific task.
     fun updateTaskStatus(userId: String, taskId: String, newStatus: TaskStatus, onSuccess: (() -> Unit)? = null, onFailure: ((Exception) -> Unit)? = null) {
         db.collection("users").document(userId).collection("tasks").document(taskId).update("status", newStatus.name)
             .addOnSuccessListener {
@@ -158,7 +169,9 @@ object TaskManager {
             .addOnFailureListener { onFailure?.invoke(it) }
     }
 
-    // --- פעולות סטטיסטיקה ---
+    // --- Statistics Operations ---
+
+    // Calculates lifetime productivity stats grouped by category and time slots.
     fun getAllProductivityStats(userId: String, categories: List<String>, onSuccess: (doneMap: Map<String, FloatArray>, totalMap: Map<String, IntArray>) -> Unit) {
         val doneMap = mutableMapOf<String, FloatArray>()
         val totalMap = mutableMapOf<String, IntArray>()
@@ -175,7 +188,9 @@ object TaskManager {
                 } catch (e: Exception) { null } ?: continue
 
                 if (taskCal.after(now)) continue
-                val timeIndex = when (taskCal.get(Calendar.HOUR_OF_DAY)) { in 6..11 -> 0; in 12..17 -> 1; in 18..21 -> 2; else -> 3 }
+
+                val timeIndex = DateTimeUtils.getTimeIndexFromDateTime(task.dateTime)
+
                 totalMap[category]?.let { it[timeIndex]++ }
                 if (task.status == TaskStatus.DONE) doneMap[category]?.let { it[timeIndex]++ }
             }
@@ -183,6 +198,7 @@ object TaskManager {
         }
     }
 
+    // Calculates productivity stats for a single category and a specific time slot index.
     fun getProductivityStats(userId: String, category: String, timeIndex: Int, onSuccess: (total: Int, done: Int) -> Unit) {
         db.collection("users").document(userId).collection("tasks").whereEqualTo("category", category).get()
             .addOnSuccessListener { result ->
@@ -192,8 +208,8 @@ object TaskManager {
                     val status = doc.getString("status")
                     val dateTime = doc.getString("dateTime") ?: continue
                     try {
-                        val hour = dateTime.split(" ")[1].split(":")[0].toInt()
-                        val currentTaskIndex = when (hour) { in 6..11 -> 0; in 12..17 -> 1; in 18..21 -> 2; else -> 3 }
+                        val currentTaskIndex = DateTimeUtils.getTimeIndexFromDateTime(dateTime)
+
                         if (currentTaskIndex == timeIndex) {
                             total++
                             if (status == "DONE") done++
@@ -204,6 +220,7 @@ object TaskManager {
             }
     }
 
+    // Calculates productivity stats for the previous week grouped by time slots and categories.
     fun getWeeklySummaryStats(
         userId: String,
         categories: List<String>,
@@ -237,7 +254,8 @@ object TaskManager {
 
                 if (cal.time.before(weekStart) || cal.time.after(weekEnd)) continue
 
-                val slotIndex = when (cal.get(Calendar.HOUR_OF_DAY)) { in 6..11 -> 0; in 12..17 -> 1; in 18..21 -> 2; else -> 3 }
+                val slotIndex = DateTimeUtils.getTimeIndexFromDateTime(task.dateTime)
+
                 val catKey = categories.find { it.equals(task.category.trim(), ignoreCase = true) } ?: "Other"
 
                 if (task.status == TaskStatus.DONE) {

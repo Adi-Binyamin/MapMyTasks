@@ -8,6 +8,10 @@ import com.example.mapmytasks.R
 import com.example.mapmytasks.data.TaskManager
 import com.example.mapmytasks.utilities.AppUtils
 
+/**
+ * Productivity Activity displays the user's task completion statistics.
+ * It visualizes the success rate across four different times of the day based on the selected category.
+ */
 class Productivity : AppCompatActivity() {
 
     private lateinit var spinner: Spinner
@@ -24,6 +28,7 @@ class Productivity : AppCompatActivity() {
     private var doneMap: Map<String, FloatArray> = emptyMap()
     private var totalMap: Map<String, IntArray> = emptyMap()
 
+    // Initializes the UI, binds views, and sets up the category spinner before fetching data.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_productivity)
@@ -41,13 +46,13 @@ class Productivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnBack).setOnClickListener { finish() }
 
-        // שימוש ברשימה המרכזית מ-AppUtils!
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, AppUtils.CATEGORIES)
         spinner.adapter = adapter
 
         fetchData()
     }
 
+    // Retrieves productivity stats from Firestore and configures the spinner listener to update UI on selection change.
     private fun fetchData() {
         val userId = TaskManager.getCurrentUserId() ?: return
 
@@ -55,7 +60,6 @@ class Productivity : AppCompatActivity() {
             doneMap = dMap
             totalMap = tMap
 
-            // עדכון ראשוני
             updateProgressBars(AppUtils.CATEGORIES[0])
 
             spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -68,10 +72,12 @@ class Productivity : AppCompatActivity() {
         }
     }
 
+    // Calculates and updates the progress bars and text views for the currently selected category.
     private fun updateProgressBars(category: String) {
         val done = doneMap[category] ?: FloatArray(4)
         val total = totalMap[category] ?: IntArray(4)
 
+        // Helper function to safely calculate the percentage and avoid division by zero.
         fun percent(d: Float, t: Int): Int {
             return if (t <= 0) 0 else ((d / t) * 100).toInt()
         }

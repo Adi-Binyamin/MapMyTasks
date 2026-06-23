@@ -23,6 +23,7 @@ class PartnerManagement : AppCompatActivity() {
     private lateinit var adapter: ArrayAdapter<String>
     private var listenerRegistration: ListenerRegistration? = null
 
+    // Initializes the UI components, sets up the list view, and handles button clicks for navigation and granting permissions.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_partner_management)
@@ -36,14 +37,14 @@ class PartnerManagement : AppCompatActivity() {
 
         grantBtn.setOnClickListener {
             val friendEmail = emailInput.text.toString().trim().lowercase()
-            // Translated to English
+
+            // Validates the input to prevent empty submissions or self-assignments.
             if (friendEmail.isEmpty()) { toast("Please enter an email"); return@setOnClickListener }
             if (friendEmail == TaskManager.getCurrentUserEmail()) { toast("You cannot grant permission to yourself"); return@setOnClickListener }
 
             TaskManager.addPermission(
                 friendEmail,
                 onSuccess = {
-                    // Translated to English
                     toast("Success! $friendEmail added to the list")
                     emailInput.text.clear()
                 },
@@ -59,6 +60,7 @@ class PartnerManagement : AppCompatActivity() {
         }
     }
 
+    // Configures the ListView adapter and sets a long-click listener to allow users to revoke permissions.
     private fun setupListView() {
         adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, partnerEmails)
         partnersListView.adapter = adapter
@@ -69,13 +71,14 @@ class PartnerManagement : AppCompatActivity() {
 
             TaskManager.deletePermission(
                 docId,
-                onSuccess = { toast("Permission for $email removed") }, // Translated
-                onFailure = { toast("Error during deletion") } // Translated
+                onSuccess = { toast("Permission for $email removed") },
+                onFailure = { toast("Error during deletion") }
             )
             true
         }
     }
 
+    // Sets up a real-time Firestore listener to automatically update the list whenever permissions change.
     private fun loadExistingPermissions() {
         listenerRegistration = TaskManager.listenToMyPermissions { emails, ids ->
             partnerEmails.clear()
@@ -86,11 +89,13 @@ class PartnerManagement : AppCompatActivity() {
         }
     }
 
+    // Removes the real-time listener to prevent memory leaks when the activity is closed.
     override fun onDestroy() {
         super.onDestroy()
-        listenerRegistration?.remove() // Cleaning up the listener when the screen is closed
+        listenerRegistration?.remove()
     }
 
+    // Helper function to display short toast messages.
     private fun toast(msg: String) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }

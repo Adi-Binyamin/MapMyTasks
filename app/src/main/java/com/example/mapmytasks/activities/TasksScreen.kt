@@ -21,6 +21,10 @@ import com.example.mapmytasks.utilities.DateTimeUtils
 import com.example.mapmytasks.utilities.toast
 import java.util.Calendar
 
+/**
+ * TasksScreen displays the user's active future tasks in a RecyclerView.
+ * It allows sorting by date or category and navigating to the Edit Task screen.
+ */
 class TasksScreen : AppCompatActivity() {
 
     private lateinit var tasksRecyclerView: RecyclerView
@@ -28,7 +32,7 @@ class TasksScreen : AppCompatActivity() {
     private val tasksList = mutableListOf<Task>()
     private lateinit var tasksAdapter: TasksAdapter
 
-    // שומרים את מצב המיון הנוכחי
+    // Tracks the currently selected sorting method (date or category).
     private var currentSortBy: String = "date"
 
     private val editTaskLauncher = registerForActivityResult(
@@ -39,6 +43,7 @@ class TasksScreen : AppCompatActivity() {
         }
     }
 
+    // Initializes the UI, starts the location background service, and sets up the RecyclerView adapter.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_tasks_screen)
@@ -70,6 +75,7 @@ class TasksScreen : AppCompatActivity() {
         }
     }
 
+    // Configures the dropdown menu for sorting options and triggers task fetching upon selection change.
     private fun setupSortSpinner() {
         val options = resources.getStringArray(R.array.sort_options)
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, options)
@@ -85,6 +91,7 @@ class TasksScreen : AppCompatActivity() {
         }
     }
 
+    // Retrieves tasks from Firestore, filters out past tasks, sorts them, and assigns grouping colors.
     private fun fetchTasks(sortBy: String = currentSortBy) {
         val userId = TaskManager.getCurrentUserId() ?: return
 
@@ -101,10 +108,10 @@ class TasksScreen : AppCompatActivity() {
                 }
             }
 
-            // העדכון החשוב! השתמשנו בשם המשתנה החדש של האדפטר:
+            // Passes the current sorting method to the adapter so it knows how to group headers.
             tasksAdapter.currentSortMethod = sortBy
 
-            // ביצוע המיון בפועל - משתמשים ב-sortWith כמו קודם
+            // Executes the actual sorting: either chronologically, or alphabetically by category then chronologically.
             if (sortBy == "date") {
                 tasksList.sortWith(compareBy { DateTimeUtils.parseDateTime(it.dateTime)?.time })
             } else {
@@ -115,7 +122,7 @@ class TasksScreen : AppCompatActivity() {
                 )
             }
 
-            // חישוב צבעים ציקליים לפי הקבוצה
+            // Calculates a cyclic color index (0-4) based on the group key (date or category) for visual distinction.
             var groupIndex = -1
             var lastGroupKey = ""
 

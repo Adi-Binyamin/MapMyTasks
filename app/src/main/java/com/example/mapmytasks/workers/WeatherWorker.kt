@@ -18,15 +18,20 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 
+/**
+ * WeatherWorker is a background task that checks the forecast for a specific task's location and time.
+ * It alerts the user 24 hours in advance if extreme weather (rain or high heat) is expected.
+ */
 class WeatherWorker(
     context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
 
+    // Executes the background network request to OpenWeatherMap and parses the forecast for the scheduled date.
     override suspend fun doWork(): Result {
         val lat = inputData.getDouble("lat", 0.0)
         val lon = inputData.getDouble("lon", 0.0)
-        // שונה ל-Task
+
         val taskName = inputData.getString("taskName") ?: "Task"
         val taskDateTime = inputData.getString("taskDateTime") ?: ""
 
@@ -39,7 +44,6 @@ class WeatherWorker(
                 formatter.format(parser.parse(taskDateTime.split(" ")[0])!!)
             } catch (e: Exception) { "" }
 
-            // שימוש ב-API Key שלך
             val url = "https://api.openweathermap.org/data/2.5/forecast?lat=$lat&lon=$lon&units=metric&appid=9daee5d8fbe2b45d8827dac821dd20d9"
 
             val client = OkHttpClient()
@@ -82,6 +86,7 @@ class WeatherWorker(
         }
     }
 
+    // Builds and fires a local notification warning the user about the expected weather conditions.
     private fun sendNotification(taskName: String, isRain: Boolean, maxTemp: Double) {
         val channelId = "weather_alerts"
         val message = when {
@@ -94,14 +99,12 @@ class WeatherWorker(
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(
-                // שונה ל-Weather Alerts
                 NotificationChannel(channelId, "Weather Alerts", NotificationManager.IMPORTANCE_HIGH)
             )
         }
 
         val notification = NotificationCompat.Builder(applicationContext, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            // שונה ל-Weather Alert
             .setContentTitle("Weather Alert - $taskName")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -112,6 +115,7 @@ class WeatherWorker(
     }
 
     companion object {
+        // Enqueues a one-time background job scheduled to run precisely 24 hours before the task occurs.
         fun scheduleWeatherWorker(context: Context, task: Task) {
             val data = workDataOf(
                 "lat" to task.latitude,
@@ -120,7 +124,6 @@ class WeatherWorker(
                 "taskDateTime" to task.dateTime
             )
 
-            // חישוב השהייה של 24 שעות לפני המשימה
             val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
             val taskDate = sdf.parse(task.dateTime) ?: return
             val delay = taskDate.time - System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1)

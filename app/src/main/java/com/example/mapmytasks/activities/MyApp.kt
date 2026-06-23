@@ -11,7 +11,7 @@ import com.example.mapmytasks.BuildConfig
 
 class MyApp : Application() {
 
-    // This function runs when the app is first created
+    // Initializes global Firebase configurations, logging, and offline persistence when the app starts.
     override fun onCreate() {
         super.onCreate()
 
@@ -23,6 +23,7 @@ class MyApp : Application() {
 
         FirebaseAuth.getInstance()
 
+        // Installs a debug provider for Firebase App Check to allow testing without physical device attestation.
         if (BuildConfig.DEBUG) {
             FirebaseAppCheck.getInstance()
                 .installAppCheckProviderFactory(DebugAppCheckProviderFactory.getInstance())

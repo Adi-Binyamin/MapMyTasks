@@ -11,7 +11,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 
-// פונקציית הרחבה (Extension) ל-Context: עכשיו אפשר לכתוב ()toast פשוט מכל מסך!
+// Extension function for Context to quickly display short Toast messages from any activity.
 fun Context.toast(msg: String) {
     Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
 }
@@ -23,12 +23,15 @@ object AppUtils {
         "Finance", "Hobby", "Travel", "School", "Chores", "Other"
     )
 
+    // Configures a spinner with the centralized list of task categories.
     fun setupCategorySpinner(context: Context, spinner: Spinner) {
         val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_item, CATEGORIES)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
     }
 
+    // Checks the user's historical completion rate for a specific category and time slot.
+    // If they have missed more than half of their past tasks (minimum 3 attempts) at this specific time, it displays a warning.
     fun checkProductivityWarning(context: Context, category: String, dateTime: String) {
         val userId = TaskManager.getCurrentUserId() ?: return
         val timeIndex = DateTimeUtils.getTimeIndexFromDateTime(dateTime)
@@ -42,6 +45,7 @@ object AppUtils {
         }
     }
 
+    // Asynchronously queries the Hebcal API to check if the selected date falls on a Jewish holiday.
     fun checkHolidayHebcal(context: Context, year: Int, month: Int, day: Int) {
         Thread {
             try {
@@ -57,6 +61,7 @@ object AppUtils {
                     if (items != null) {
                         for (i in 0 until items.length()) {
                             val item = items.getJSONObject(i)
+                            // Checks if the holiday date exactly matches the user's selected date.
                             if (item.optString("date").startsWith(selectedDateStr)) {
                                 holidayName = item.optString("title")
                                 break
@@ -65,6 +70,7 @@ object AppUtils {
                     }
 
                     if (holidayName != null) {
+                        // Switches back to the main UI thread to show the toast notification safely.
                         Handler(Looper.getMainLooper()).post {
                             context.toast("Heads up: $holidayName falls on this date")
                         }
@@ -72,41 +78,5 @@ object AppUtils {
                 }
             } catch (e: Exception) { e.printStackTrace() }
         }.start()
-    }
-
-    // --- הפונקציה החדשה שמתזמנת את ההתראה ---
-    fun scheduleTaskAlarm(context: Context, task: com.example.mapmytasks.models.Task, userId: String) {
-        try {
-            val sdf = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
-            val date = sdf.parse(task.dateTime) ?: return
-
-            if (date.time <= System.currentTimeMillis()) return
-
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-            val intent = android.content.Intent(context, com.example.mapmytasks.receivers.TaskReminderReceiver::class.java).apply {
-                putExtra("TASK_ID", task.id)
-                putExtra("TASK_NAME", task.name)
-                putExtra("USER_ID", userId)
-            }
-
-            val pendingIntent = android.app.PendingIntent.getBroadcast(
-                context,
-                task.id.hashCode(),
-                intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
-
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, date.time, pendingIntent)
-                } else {
-                    alarmManager.set(android.app.AlarmManager.RTC_WAKEUP, date.time, pendingIntent)
-                }
-            } else {
-                alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, date.time, pendingIntent)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 }

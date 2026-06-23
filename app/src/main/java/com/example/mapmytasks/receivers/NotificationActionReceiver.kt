@@ -8,14 +8,18 @@ import android.widget.Toast
 import com.example.mapmytasks.data.TaskManager
 import com.example.mapmytasks.models.TaskStatus
 
+/**
+ * NotificationActionReceiver listens for broadcast intents triggered by notification action buttons.
+ * It handles user interactions directly from the notification tray, such as marking a task as done or dismissing it.
+ */
 class NotificationActionReceiver : BroadcastReceiver() {
 
-    // Handles actions from notification buttons
+    // Processes the action intents from notification buttons and updates the task status in Firestore accordingly.
     override fun onReceive(context: Context, intent: Intent) {
         val taskId = intent.getStringExtra("TASK_ID") ?: return
         val userId = intent.getStringExtra("USER_ID") ?: return
 
-        // Close the notification immediately when a button is clicked
+        // Closes the notification immediately when a button is clicked to provide instant UI feedback.
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(taskId.hashCode())
 

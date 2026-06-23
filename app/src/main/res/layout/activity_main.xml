@@ -39,7 +39,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="40dp"
-            android:text="MAP MY TASK"
+            android:text="MAP MY TASKS"
             android:textSize="38sp"
             android:fontFamily="sans-serif-black"
             android:textStyle="bold"

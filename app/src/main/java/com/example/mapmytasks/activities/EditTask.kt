@@ -42,6 +42,7 @@ class EditTask : AppCompatActivity() {
         private const val LOCATION_REQUEST_CODE = 1001
     }
 
+    // Initializes the Edit Task screen, sets up UI components, and triggers data loading.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_task)
@@ -70,6 +71,7 @@ class EditTask : AppCompatActivity() {
         backBtn.setOnClickListener { finish() }
     }
 
+    // Configures the date and time picker, and checks for API warnings (productivity/holidays) upon selection.
     private fun setupDateTimePicker() {
         dateTimeBtn.setOnClickListener {
             DateTimeUtils.showDateTimePicker(this) { formattedDateTime, year, month, day ->
@@ -78,13 +80,13 @@ class EditTask : AppCompatActivity() {
 
                 val selectedCategory = categorySpinner.selectedItem.toString()
 
-                // קריאות למחלקות העזר:
                 AppUtils.checkProductivityWarning(this, selectedCategory, selectedDateTime)
                 AppUtils.checkHolidayHebcal(this, year, month, day)
             }
         }
     }
 
+    // Launches the Google Places Autocomplete overlay to let the user select a new address.
     private fun setupLocationPicker() {
         locationBtn.setOnClickListener {
             val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
@@ -93,6 +95,7 @@ class EditTask : AppCompatActivity() {
         }
     }
 
+    // Processes the selected location from the Google Places search and updates the UI state variables.
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == LOCATION_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
@@ -104,6 +107,7 @@ class EditTask : AppCompatActivity() {
         }
     }
 
+    // Fetches the current task details from Firestore using the task ID and populates the editable fields.
     private fun loadTaskData() {
         taskOwnerId = intent.getStringExtra("OWNER_ID") ?: TaskManager.getCurrentUserId() ?: return
         createdByTv = findViewById(R.id.createdByTv)
@@ -131,6 +135,7 @@ class EditTask : AppCompatActivity() {
         })
     }
 
+    // Validates the inputs, creates the updated Task object, saves it, and reschedules background jobs.
     private fun saveTaskChanges() {
         if (taskOwnerId.isEmpty()) return
 
@@ -159,11 +164,8 @@ class EditTask : AppCompatActivity() {
         TaskManager.updateTask(taskOwnerId, taskId, updatedTask, onSuccess = {
             toast("Task updated successfully")
 
-            // תזמון מזג האוויר המעודכן
+            // Reschedule the weather notification worker for the newly updated date and location
             WeatherWorker.scheduleWeatherWorker(this, updatedTask)
-
-            // --- הוספנו: תזמון ההתראה (השעון המעורר) לתאריך/השעה החדשים! ---
-           // AppUtils.scheduleTaskAlarm(this, updatedTask, taskOwnerId)
 
             setResult(RESULT_OK)
             finish()
@@ -173,20 +175,14 @@ class EditTask : AppCompatActivity() {
         })
     }
 
+    // Deletes the task from Firestore and cancels its associated background workers.
     private fun deleteTask() {
         if (taskOwnerId.isEmpty()) return
 
         TaskManager.deleteTask(taskOwnerId, taskId, onSuccess = {
-            WorkManager.getInstance(this).cancelUniqueWork("weather_$taskId")
 
-            // בונוס קטן: ביטול ההתראה אם המשימה נמחקת
-            val alarmManager = getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
-            val intent = android.content.Intent(this, com.example.mapmytasks.receivers.TaskReminderReceiver::class.java)
-            val pendingIntent = android.app.PendingIntent.getBroadcast(
-                this, taskId.hashCode(), intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
-            alarmManager.cancel(pendingIntent)
+            // Cancel the specific weather background job tied to this task ID to prevent orphan notifications
+            WorkManager.getInstance(this).cancelUniqueWork("weather_$taskId")
 
             toast("Task deleted")
             setResult(RESULT_OK)

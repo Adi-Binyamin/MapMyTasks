@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -20,26 +19,26 @@ import com.google.ai.client.generativeai.type.content
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.json.JSONObject
 
+/**
+ * ChatActivity manages the virtual assistant interface within the app.
+ * It uses the Google Generative AI API (Gemini) to provide contextual help
+ * to users regarding app navigation and features based on predefined system instructions.
+ */
 class ChatActivity : AppCompatActivity() {
 
     private lateinit var chatRecyclerView: RecyclerView
     private lateinit var messageInput: EditText
     private lateinit var sendButton: ImageButton
-    private lateinit var btnBack: Button // הוספנו את ההגדרה של הכפתור
+    private lateinit var btnBack: Button
 
     private val messagesList = mutableListOf<ChatMessage>()
     private lateinit var chatAdapter: ChatAdapter
 
-    private val TAG = "GEMINI_TRACE"
-
-    // APIkey is private
     private val geminiApiKey = ""
 
-    // הגדרת המודל - שימוש בגרסה 2.0
+    // Initializes the Gemini generative model with specific system instructions
+    // to restrict its knowledge solely to the app's functionality and layout.
     private val generativeModel = GenerativeModel(
         modelName = "gemini-2.5-flash",
         apiKey = geminiApiKey,
@@ -93,136 +92,74 @@ class ChatActivity : AppCompatActivity() {
                  """.trimIndent())        }
     )
 
-    // אתחול הצ'אט עם זיכרון
     private val chat = generativeModel.startChat()
 
+    // Sets up the UI components, RecyclerView adapter, and handles button clicks.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
-        Log.i(TAG, "==========================================")
-        Log.i(TAG, "🚀 אתחול ChatActivity עבור MapMyTasks")
-        Log.d(TAG, "Model configured: gemini-2.0-flash")
-
-        // קריאה לפונקציית בדיקת המודלים הזמינים
-        printAvailableModels()
-
         chatRecyclerView = findViewById(R.id.chatRecyclerView)
         messageInput = findViewById(R.id.messageInput)
         sendButton = findViewById(R.id.sendButton)
-        btnBack = findViewById(R.id.btnBack) // חיבור הכפתור ל-XML
+        btnBack = findViewById(R.id.btnBack)
 
         chatAdapter = ChatAdapter(messagesList)
         chatRecyclerView.layoutManager = LinearLayoutManager(this)
         chatRecyclerView.adapter = chatAdapter
 
-        // פונקציונליות של כפתור החזרה
         btnBack.setOnClickListener {
             finish()
         }
 
         if (messagesList.isEmpty()) {
-            Log.d(TAG, "מציג הודעת פתיחה דיפולטיבית")
             addMessageToChat(ChatMessage("Hi! I'm the MapMyTasks assistant. How can I help you?", false))
         }
 
         sendButton.setOnClickListener {
             val userText = messageInput.text.toString().trim()
-            Log.d(TAG, "🖱️ לחיצה על כפתור שליחה. טקסט: '$userText'")
-
             if (userText.isNotEmpty()) {
                 checkAndSend(userText)
-            } else {
-                Log.w(TAG, "⚠️ ניסיון שליחה של טקסט ריק - בוטל")
             }
         }
     }
 
-    private fun printAvailableModels() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                Log.d("GEMINI_MODELS", "🔍 מתחיל סריקת מודלים זמינים...")
-
-                val client = OkHttpClient()
-                val request = Request.Builder()
-                    .url("https://generativelanguage.googleapis.com/v1beta/models?key=$geminiApiKey")
-                    .build()
-
-                val response = client.newCall(request).execute()
-                val responseBody = response.body?.string()
-
-                if (response.isSuccessful && responseBody != null) {
-                    val jsonObject = JSONObject(responseBody)
-                    val modelsArray = jsonObject.getJSONArray("models")
-
-                    Log.i("GEMINI_MODELS", "✅ נמצאו ${modelsArray.length()} מודלים זמינים עבור המפתח שלך:")
-
-                    for (i in 0 until modelsArray.length()) {
-                        val model = modelsArray.getJSONObject(i)
-                        val name = model.getString("name")
-                        val displayName = model.optString("displayName", "N/A")
-                        Log.i("GEMINI_MODELS", "🔹 מודל: $name | שם תצוגה: $displayName")
-                    }
-                } else {
-                    Log.e("GEMINI_MODELS", "❌ שגיאה בקבלת המודלים! קוד שגיאה: ${response.code}")
-                    Log.e("GEMINI_MODELS", "Response: $responseBody")
-                }
-            } catch (e: Exception) {
-                Log.e("GEMINI_MODELS", "❌ תקלה בתקשורת בזמן בדיקת המודלים: ${e.message}")
-            }
-        }
-    }
-
+    // Validates network connectivity before attempting to send the message to the API.
     private fun checkAndSend(userText: String) {
-        Log.d(TAG, "🔎 בודק חיבור לאינטרנט...")
         if (!isNetworkAvailable()) {
-            Log.e(TAG, "❌ אין חיבור אינטרנט פעיל במכשיר!")
             addMessageToChat(ChatMessage("Error: No internet connection.", false))
             return
         }
-        Log.d(TAG, "✅ אינטרנט תקין. עובר לשליחה לג'מיני.")
         sendMessageToGemini(userText)
     }
 
+    // Handles the asynchronous network call to the Gemini API and updates the UI with the response or error.
     private fun sendMessageToGemini(userText: String) {
-        Log.d(TAG, "----------------------------------")
-        Log.i(TAG, "📤 שולח הודעת משתמש: $userText")
-
         addMessageToChat(ChatMessage(userText, true))
         messageInput.text.clear()
         sendButton.isEnabled = false
 
-        Log.d(TAG, "📊 היסטוריית שיחה נוכחית: ${chat.history.size} הודעות")
-
+        // Launches a coroutine on the background thread (IO) to prevent blocking the main UI thread during the API call.
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "📡 פנייה ל-API (Gemini 2.0 Flash)...")
-                val startTime = System.currentTimeMillis()
 
                 val response = chat.sendMessage(userText)
-
-                val endTime = System.currentTimeMillis()
-                Log.d(TAG, "⏱️ זמן תגובה מהשרת: ${endTime - startTime}ms")
-
                 val botReply = response.text
 
+                // Switches back to the main thread to safely update the UI components (RecyclerView).
                 withContext(Dispatchers.Main) {
                     if (botReply != null) {
-                        Log.i(TAG, "✅ תגובה התקבלה: $botReply")
                         addMessageToChat(ChatMessage(botReply, false))
                     } else {
-                        Log.w(TAG, "⚠️ אזהרה: response.text חזר כ-null!")
                         addMessageToChat(ChatMessage("Received an empty response from Google.", false))
                     }
                     sendButton.isEnabled = true
                 }
 
             } catch (e: Exception) {
-                Log.e(TAG, "🛑 חריגה (Exception) בזמן התקשורת!")
-                Log.e(TAG, "Exception Type: ${e.javaClass.simpleName}")
-                Log.e(TAG, "Full Message: ${e.message}")
                 e.printStackTrace()
 
+                // Maps HTTP error codes from the API exception to user-friendly error messages.
                 withContext(Dispatchers.Main) {
                     val displayError = when {
                         e.message?.contains("404") == true -> "Error 404: Model not found."
@@ -237,6 +174,7 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
+    // Checks if the device has an active internet connection (Wi-Fi or Cellular).
     private fun isNetworkAvailable(): Boolean {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork
@@ -245,8 +183,8 @@ class ChatActivity : AppCompatActivity() {
                 capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true
     }
 
+    // Helper method to add a new message to the list and smoothly scroll the view to the bottom.
     private fun addMessageToChat(message: ChatMessage) {
-        Log.v(TAG, "עדכון UI: הוספת הודעה לרשימה (${if (message.isUser) "משתמש" else "בוט"})")
         messagesList.add(message)
         chatAdapter.notifyItemInserted(messagesList.size - 1)
         chatRecyclerView.scrollToPosition(messagesList.size - 1)

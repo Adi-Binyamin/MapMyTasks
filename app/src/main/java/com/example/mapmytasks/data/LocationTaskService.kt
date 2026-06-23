@@ -21,6 +21,10 @@ import com.google.android.gms.location.*
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 
+/**
+ * LocationTaskService is a foreground service that continuously monitors the user's location
+ * and the current time to trigger geofence and time-based task notifications.
+ */
 class LocationTaskService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -32,14 +36,15 @@ class LocationTaskService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private var lastSentTaskCheck = 0L
 
+    // A repeating task that checks for due notifications at regular intervals.
     private val timeCheckRunnable = object : Runnable {
         override fun run() {
-            // 1. בדיקת המשימות שלך לפי מיקום וזמן (כל 10 שניות)
+            // 1. Check personal tasks based on location and time (runs every 10 seconds).
             if (lastLat != 0.0 && lastLng != 0.0) {
                 checkTasks(lastLat, lastLng)
             }
 
-            // 2. בדיקת משימות ששלחת לאחרים לפי זמן (קריאה לשרת רק פעם בדקה)
+            // 2. Check tasks assigned to others based on time (polls the server only once a minute).
             val now = System.currentTimeMillis()
             if (now - lastSentTaskCheck >= 60000L) {
                 checkSentTasksDirectly()
@@ -49,7 +54,8 @@ class LocationTaskService : Service() {
             handler.postDelayed(this, 10000L)
         }
     }
-    // שולף ישירות מהשרת את המשימות ששלחת, בלי לשמור אותן ברשימה גלובלית
+
+    // Fetches tasks assigned to others directly from the server without keeping them in a global list.
     private fun checkSentTasksDirectly() {
         val myEmail = TaskManager.getCurrentUserEmail() ?: return
         val now = Calendar.getInstance()
@@ -61,7 +67,8 @@ class LocationTaskService : Service() {
                 for (doc in snapshot.documents) {
                     val task = doc.toObject(com.example.mapmytasks.models.Task::class.java)?.copy(id = doc.id) ?: continue
 
-                    if (task.assignTo == myEmail) continue // מדלג על משימות ששייכות לך
+                    // Skips tasks that are actually assigned to yourself.
+                    if (task.assignTo == myEmail) continue
                     if (task.status != TaskStatus.PENDING) continue
                     if (task.dateTime.isEmpty()) continue
 
@@ -88,7 +95,7 @@ class LocationTaskService : Service() {
             }
     }
 
-    // מציג התראה נקייה ללא כפתורי פעולה - רק מידע ומייל היעד
+    // Displays a clean notification without action buttons, showing only the task info and target email.
     private fun showSentTaskNotification(task: com.example.mapmytasks.models.Task) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notifChannelId = "sent_tasks_channel"
@@ -102,9 +109,9 @@ class LocationTaskService : Service() {
             .setContentTitle("Reminder: Task assigned to partner")
             .setContentText("The task '${task.name}' is due for ${task.assignTo}")
             .setStyle(NotificationCompat.BigTextStyle().bigText(
-                "Task details: ${task.name}\\n" +
-                        "Category: ${task.category}\\n" +
-                        "Task location: ${task.location}\\n " +
+                "Task details: ${task.name}\n" +
+                        "Category: ${task.category}\n" +
+                        "Task location: ${task.location}\n " +
                         "Sent to partner: ${task.assignTo}"
             ))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -112,7 +119,7 @@ class LocationTaskService : Service() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        // שימוש ב-hashCode שונה כדי שלא יתנגש עם התראות רגילות במידה ויהיו
+        // Uses a modified hashCode offset (+2) to prevent collisions with regular personal task notifications.
         notificationManager.notify(task.id.hashCode() + 2, notification)
     }
 
@@ -124,6 +131,7 @@ class LocationTaskService : Service() {
         private const val GEOFENCE_RADIUS_METERS = 1000f
     }
 
+    // Initializes location services, sets up the foreground notification, and starts the loops.
     override fun onCreate() {
         super.onCreate()
 
@@ -155,25 +163,9 @@ class LocationTaskService : Service() {
         startLocationUpdates()
         handler.post(timeCheckRunnable)
 
-        // --- הוספנו: האזנה ברקע למשימות חדשות ממשתמשים אחרים! ---
-        listenForPartnerTasksInBackground()
     }
 
-    // הפונקציה החדשה שעושה את הקסם!
-    private fun listenForPartnerTasksInBackground() {
-        val userId = TaskManager.getCurrentUserId() ?: return
-
-        // מאזין לשרת כל הזמן, גם כשהאפליקציה סגורה (כל עוד השירות רץ)
-        FirebaseFirestore.getInstance().collection("users").document(userId).collection("tasks")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
-
-                for (doc in snapshot.documents) {
-                    val task = doc.toObject(com.example.mapmytasks.models.Task::class.java)?.copy(id = doc.id) ?: continue
-                }
-            }
-    }
-
+    // Requests continuous location updates if the required permission is granted.
     private fun startLocationUpdates() {
         val request = LocationRequest.create().apply {
             interval = CHECK_INTERVAL_MS
@@ -187,12 +179,13 @@ class LocationTaskService : Service() {
             Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
-        // התנאי תוקן: המערכת תשתמש בהרשאה שביקשת מהמשתמש במסך יצירת המשימה
+        // Relies on the location permission that the user grants during the task creation flow.
         if (fineLocationGranted) {
             fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
         }
     }
 
+    // Evaluates personal pending tasks to see if the current time and location match the task's criteria.
     private fun checkTasks(lat: Double, lng: Double) {
         val userId = TaskManager.getCurrentUserId() ?: return
 
@@ -243,6 +236,7 @@ class LocationTaskService : Service() {
         })
     }
 
+    // Displays an actionable notification allowing the user to mark a personal task as done or dismiss it.
     private fun showNotification(taskName: String, taskId: String, userId: String) {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notifChannelId = "task_channel"
@@ -286,6 +280,7 @@ class LocationTaskService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    // Cleans up the location updates and background thread callbacks when the service is stopped.
     override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)

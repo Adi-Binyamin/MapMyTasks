@@ -2,20 +2,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- הרשאות בסיסיות -->
+    <!-- Basic permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- הרשאה קריטית להתראות באנדרואיד 13 ומעלה ולשעון מעורר! -->
+    <!-- Required permissions for Android 13+ notifications and exact alarms -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- הרשאות מיקום -->
+    <!-- Location permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
-    <!-- הרשאות שירות קדמי -->
+    <!-- Foreground service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
@@ -33,7 +33,7 @@
 
         <activity android:name=".activities.ChatActivity" />
 
-        <!-- מסך לוגאין – מסך פתיחה -->
+        <!-- Login screen – launcher activity -->
         <activity
             android:name=".activities.LogIn"
             android:exported="true">
@@ -43,7 +43,7 @@
             </intent-filter>
         </activity>
 
-        <!-- מסכי האפליקציה -->
+        <!-- Application screens -->
         <activity android:name=".activities.Productivity" android:exported="false" />
         <activity android:name=".activities.WeeklySummary" android:exported="false" />
         <activity android:name=".activities.TasksScreen" android:exported="false" />
@@ -53,20 +53,20 @@
         <activity android:name=".activities.SentTasksActivity" android:exported="false" />
         <activity android:name=".activities.BalloonGameActivity" android:exported="false" />
 
-        <!-- MainActivity חייב להיות exported=true בשביל Intent -->
+        <!-- MainActivity must be exported=true to allow Intents -->
         <activity
             android:name=".activities.MainActivity"
             android:exported="true" />
 
-        <!-- שירות מיקום קדמי -->
+        <!-- Foreground location service -->
         <service
             android:name=".data.LocationTaskService"
             android:foregroundServiceType="location"
             android:exported="false" />
 
-        <!-- ריסיברים להתראות ולגאופנס (הכנסתי את החדש לכאן!) -->
+        <!-- Receivers for notifications and geofencing -->
         <receiver android:name=".receivers.NotificationActionReceiver" />
-        <receiver android:name=".receivers.TaskReminderReceiver" />
+        <!--  <receiver android:name=".receivers.TaskReminderReceiver" />-->
 
     </application>
 

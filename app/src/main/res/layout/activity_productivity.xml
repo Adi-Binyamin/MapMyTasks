@@ -27,7 +27,11 @@
             android:background="@color/white"
             android:layout_marginBottom="32dp"/>
 
-        <TextView android:text="Morning" android:textColor="@color/black" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <TextView android:text="Morning"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
         <ProgressBar
             android:id="@+id/progressMorning"
             style="?android:attr/progressBarStyleHorizontal"
@@ -38,9 +42,18 @@
             android:progress="30"
             android:progressTint="@color/pastel_blue"
             android:progressBackgroundTint="@color/pastel_grey"/>
-        <TextView android:id="@+id/tvMorningPercent" android:text="30%" android:textColor="@color/black" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/>
+        <TextView android:id="@+id/tvMorningPercent"
+            android:text="30%"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"/>
 
-        <TextView android:text="Afternoon" android:textColor="@color/black" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <TextView android:text="Afternoon"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
         <ProgressBar
             android:id="@+id/progressAfternoon"
             style="?android:attr/progressBarStyleHorizontal"
@@ -51,9 +64,18 @@
             android:progress="55"
             android:progressTint="@color/pastel_mint"
             android:progressBackgroundTint="@color/pastel_grey"/>
-        <TextView android:id="@+id/tvAfternoonPercent" android:text="55%" android:textColor="@color/black" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/>
+        <TextView android:id="@+id/tvAfternoonPercent"
+            android:text="55%"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"/>
 
-        <TextView android:text="Evening" android:textColor="@color/black" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <TextView android:text="Evening"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
         <ProgressBar
             android:id="@+id/progressEvening"
             style="?android:attr/progressBarStyleHorizontal"
@@ -64,9 +86,18 @@
             android:progress="15"
             android:progressTint="@color/pastel_rose"
             android:progressBackgroundTint="@color/pastel_grey"/>
-        <TextView android:id="@+id/tvEveningPercent" android:text="15%" android:textColor="@color/black" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/>
+        <TextView android:id="@+id/tvEveningPercent"
+            android:text="15%"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"/>
 
-        <TextView android:text="Night" android:textColor="@color/black" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+        <TextView android:text="Night"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
         <ProgressBar
             android:id="@+id/progressNight"
             style="?android:attr/progressBarStyleHorizontal"
@@ -77,7 +108,12 @@
             android:progress="10"
             android:progressTint="@color/pastel_blue"
             android:progressBackgroundTint="@color/pastel_grey"/>
-        <TextView android:id="@+id/tvNightPercent" android:text="10%" android:textColor="@color/black" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="32dp"/>
+        <TextView android:id="@+id/tvNightPercent"
+            android:text="10%"
+            android:textColor="@color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"/>
 
         <Button
             android:id="@+id/btnBack"

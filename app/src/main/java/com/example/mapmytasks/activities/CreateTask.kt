@@ -54,6 +54,7 @@ class CreateTask : AppCompatActivity() {
             }
         }
 
+    // Initializes the UI components, sets up pickers, and loads available partners.
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_task)
@@ -79,6 +80,7 @@ class CreateTask : AppCompatActivity() {
         checkPermissions()
     }
 
+    // Fetches the list of users who have granted permission to assign tasks to them and populates the spinner.
     private fun loadPartners() {
         val myEmail = TaskManager.getCurrentUserEmail() ?: return
         val partnersList = mutableListOf("My Tasks")
@@ -93,6 +95,7 @@ class CreateTask : AppCompatActivity() {
         })
     }
 
+    // Configures the save button to validate inputs, build the Task object, and determine the correct recipient.
     private fun setupSaveButton() {
         saveTaskBtn.setOnClickListener {
             val taskName = taskNameInput.text.toString().trim()
@@ -123,6 +126,7 @@ class CreateTask : AppCompatActivity() {
                 assignTo = targetAssignTo
             )
 
+            // Routes the task to either the current user's database or searches for the partner's UID to save it there.
             if (selectedOption == "My Tasks") {
                 saveToFirestore(myUid, task, "My Tasks")
             } else {
@@ -142,15 +146,13 @@ class CreateTask : AppCompatActivity() {
         }
     }
 
+    // Saves the task to the specified user's Firestore document and schedules background tasks.
     private fun saveToFirestore(targetUid: String, task: Task, targetName: String) {
         TaskManager.addTask(targetUid, task, onSuccess = { updatedTask ->
             toast("Task saved and sent to $targetName")
 
-            // מתזמן את מזג האוויר
+            // Schedules the weather background worker for this specific task.
             WeatherWorker.scheduleWeatherWorker(this, updatedTask)
-
-            // --- הנה השורה שהוספנו! מתזמן את ההתראה של המשימה ---
-            //AppUtils.scheduleTaskAlarm(this, updatedTask, targetUid)
 
             finish()
         }, onFailure = { e ->
@@ -159,6 +161,7 @@ class CreateTask : AppCompatActivity() {
         })
     }
 
+    // Opens the date and time picker dialog and triggers API checks for productivity warnings and holidays.
     private fun setupDateTimePicker() {
         dateTimeBtn.setOnClickListener {
             DateTimeUtils.showDateTimePicker(this) { formattedDateTime, year, month, day ->
@@ -166,12 +169,16 @@ class CreateTask : AppCompatActivity() {
                 dateTimeBtn.text = selectedDateTime
 
                 val selectedCategory = categorySpinner.selectedItem.toString()
-                AppUtils.checkProductivityWarning(this, selectedCategory, selectedDateTime)
+                val selectedOption = assignToSpinner.selectedItem?.toString() ?: "My Tasks"
+                if(selectedOption=="My Tasks") {
+                    AppUtils.checkProductivityWarning(this, selectedCategory, selectedDateTime)
+                }
                 AppUtils.checkHolidayHebcal(this, year, month, day)
             }
         }
     }
 
+    // Launches the Google Places Autocomplete overlay to let the user search and select a specific address.
     private fun setupLocationPicker() {
         locationBtn.setOnClickListener {
             val fields = listOf(Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
@@ -180,6 +187,7 @@ class CreateTask : AppCompatActivity() {
         }
     }
 
+    // Prompts the user for precise location permissions if not already granted.
     private fun checkPermissions() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)

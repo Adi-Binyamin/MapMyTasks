@@ -12,6 +12,10 @@ import com.example.mapmytasks.R
 import com.example.mapmytasks.data.TaskManager
 import com.example.mapmytasks.models.Task
 
+/**
+ * TasksAdapter manages the RecyclerView display for the list of tasks.
+ * It handles dynamic grouping (by date or category), alternating colors, and binding task details to the UI.
+ */
 class TasksAdapter(
     private var tasks: List<Task>,
     private val onEditClick: (Task) -> Unit
@@ -19,13 +23,14 @@ class TasksAdapter(
 
     var currentSortMethod: String = "date"
 
+    // Holds references to the views within each individual task item layout.
     class TaskViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val container: LinearLayout = view.findViewById(R.id.taskItemContainer)
         val cardView: LinearLayout = view.findViewById(R.id.taskCardView)
         val dateHeader: TextView = view.findViewById(R.id.dateHeader)
         val divider: View = view.findViewById(R.id.innerDivider)
 
-        // האלמנטים של התצוגה בצד שמאל
+        // UI elements for the left-side display section
         val timeOnlyText: TextView = view.findViewById(R.id.taskTimeOnly)
         val dateOnlyText: TextView = view.findViewById(R.id.taskDateOnly)
         val categoryText: TextView = view.findViewById(R.id.taskCategoryText)
@@ -36,6 +41,7 @@ class TasksAdapter(
         val editBtn: ImageButton = view.findViewById(R.id.editTaskBtn)
     }
 
+    // Inflates the layout for a single task item.
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_task, parent, false)
         return TaskViewHolder(view)
@@ -43,6 +49,7 @@ class TasksAdapter(
 
     override fun getItemCount(): Int = tasks.size
 
+    // Binds task data to the UI, manages group headers based on the sorting method, and applies styling.
     override fun onBindViewHolder(holder: TaskViewHolder, position: Int) {
         val task = tasks[position]
         val prevTask = if (position > 0) tasks[position - 1] else null
@@ -82,14 +89,14 @@ class TasksAdapter(
         }
         holder.container.layoutParams = layoutParams
 
-        // חילוץ והצגת נתוני השעה והתאריך בנפרד
+        // Extracts and displays the time and date components separately
         val dateParts = task.dateTime.split(" ")
         val currentDate = dateParts.getOrNull(0) ?: ""
         val currentTime = dateParts.getOrNull(1) ?: "--:--"
 
         holder.timeOnlyText.text = currentTime
         holder.dateOnlyText.text = currentDate
-        holder.categoryText.text = task.category // מציג תמיד את הקטגוריה
+        holder.categoryText.text = task.category
 
         holder.nameText.text = task.name
         holder.locationText.text = task.location

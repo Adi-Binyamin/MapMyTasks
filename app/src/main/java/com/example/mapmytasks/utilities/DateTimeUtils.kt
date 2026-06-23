@@ -7,7 +7,7 @@ import java.util.Calendar
 
 object DateTimeUtils {
 
-    // המרת מחרוזת תאריך לאובייקט Calendar (משמש את המסכים השונים)
+    // Parses a formatted date-time string into a Calendar object for use across various screens.
     fun parseDateTime(dateTime: String): Calendar? {
         return try {
             val parts = dateTime.split(" ", "/", ":")
@@ -20,7 +20,7 @@ object DateTimeUtils {
         } catch (e: Exception) { null }
     }
 
-    // מציאת "חלק היום" מתוך שעה (0=בוקר, 1=צהריים, 2=ערב, 3=לילה)
+    // Determines the time of day index (0=Morning, 1=Afternoon, 2=Evening, 3=Night) based on the extracted hour.
     fun getTimeIndexFromDateTime(dateTime: String): Int {
         val hour = try { dateTime.split(" ")[1].split(":")[0].toInt() } catch (e: Exception) { return -1 }
         return when (hour) {
@@ -31,7 +31,7 @@ object DateTimeUtils {
         }
     }
 
-    // פתיחת דיאלוג משולב של תאריך ושעה
+    // Opens a combined Date and Time picker dialog sequence, ensuring only future dates/times can be selected.
     fun showDateTimePicker(
         context: Context,
         onDateTimeSelected: (formattedDateTime: String, year: Int, month: Int, day: Int) -> Unit
@@ -41,16 +41,16 @@ object DateTimeUtils {
         val datePickerDialog = DatePickerDialog(context, { _, year, month, day ->
             TimePickerDialog(context, { _, hour, minute ->
 
-                // בדיקה אם הזמן והשעה שנבחרו קטנים מהרגע הנוכחי
+                // Checks if the selected date and time are in the past.
                 val selectedCalendar = Calendar.getInstance().apply {
                     set(year, month, day, hour, minute, 0)
                 }
 
                 if (selectedCalendar.timeInMillis < System.currentTimeMillis()) {
-                    // הזמן כבר עבר - מקפיצים הודעה ולא שומרים את הבחירה!
+                    // The selected time is in the past - show an error and discard the selection.
                     context.toast("Please select a future date and time")
                 } else {
-                    // הזמן תקין (בעתיד) - מעבירים הלאה
+                    // The selected time is valid (in the future) - format and return the result.
                     val formattedStr = String.format("%02d/%02d/%04d %02d:%02d", day, month + 1, year, hour, minute)
                     onDateTimeSelected(formattedStr, year, month + 1, day)
                 }
@@ -58,7 +58,7 @@ object DateTimeUtils {
             }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true).show()
         }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
 
-        // --- התוספת שלנו: מונע לחיצה על ימים בעבר בלוח השנה ---
+        // Prevents the user from selecting past dates in the calendar dialog.
         datePickerDialog.datePicker.minDate = System.currentTimeMillis() - 1000
 
         datePickerDialog.show()
